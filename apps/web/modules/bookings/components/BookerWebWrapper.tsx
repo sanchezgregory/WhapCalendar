@@ -93,15 +93,25 @@ const BookerWebWrapperComponent = (props: BookerWebWrapperAtomProps): JSX.Elemen
   const hasSession = !!session;
   const firstNameQueryParam = searchParams?.get("firstName");
   const lastNameQueryParam = searchParams?.get("lastName");
-  const metadata = Object.keys(routerQuery)
-    .filter((key) => key.startsWith("metadata"))
-    .reduce(
-      (metadata, key) => ({
-        ...metadata,
-        [key.substring("metadata[".length, key.length - 1)]: searchParams?.get(key),
-      }),
+  const metadataFromQueryParams = Object.keys(routerQuery)
+    .filter((key) => key.startsWith("metadata[") && key.endsWith("]"))
+    .reduce<Record<string, string>>(
+      (metadata, key) => {
+        const value = searchParams?.get(key);
+        if (!value) return metadata;
+
+        return {
+          ...metadata,
+          [key.substring("metadata[".length, key.length - 1)]: value,
+        };
+      },
       {}
     );
+  const whapContext = searchParams?.get("whap_context");
+  const metadata = {
+    ...metadataFromQueryParams,
+    ...(whapContext ? { whap_context: whapContext } : {}),
+  };
   const prefillFormParams = useMemo(() => {
     return {
       name:

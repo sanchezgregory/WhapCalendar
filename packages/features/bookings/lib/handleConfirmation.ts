@@ -399,6 +399,13 @@ export async function handleConfirmation(args: {
       currency: eventType?.currency,
       length: eventType?.length,
     };
+    const confirmedBookingMetadata = updatedBookings[0]?.metadata;
+    const bookingMetadata: NonNullable<EventPayloadType["metadata"]> =
+      confirmedBookingMetadata &&
+      typeof confirmedBookingMetadata === "object" &&
+      !Array.isArray(confirmedBookingMetadata)
+        ? (confirmedBookingMetadata as NonNullable<EventPayloadType["metadata"]>)
+        : {};
 
     const payload: EventPayloadType = {
       ...evt,
@@ -407,7 +414,10 @@ export async function handleConfirmation(args: {
       eventTypeId: eventType?.id,
       status: "ACCEPTED",
       smsReminderNumber: booking.smsReminderNumber || undefined,
-      metadata: meetingUrl ? { videoCallUrl: meetingUrl } : {},
+      metadata: {
+        ...bookingMetadata,
+        ...(meetingUrl ? { videoCallUrl: meetingUrl } : {}),
+      },
       ...(platformClientParams ? platformClientParams : {}),
     };
 
