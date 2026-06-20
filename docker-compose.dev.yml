@@ -1,0 +1,101 @@
+volumes:
+  database-data:
+  redis-data:
+  calcom-dev-node-modules:
+  calcom-dev-next-cache:
+  calcom-dev-turbo-cache:
+
+networks:
+  stack:
+    name: stack
+    external: false
+
+x-calcom-dev-base: &calcom-dev-base
+  image: node:20
+  working_dir: /calcom
+  env_file: .env
+  networks:
+    - stack
+  volumes:
+    - .:/calcom:cached
+    - calcom-dev-node-modules:/calcom/node_modules
+    - calcom-dev-turbo-cache:/calcom/.turbo
+  environment:
+    - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}/${POSTGRES_DB}
+    - DATABASE_DIRECT_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}/${POSTGRES_DB}
+    - DATABASE_READ_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}/${POSTGRES_DB}
+    - DATABASE_WRITE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}/${POSTGRES_DB}
+    - REDIS_URL=redis://redis:6379
+    - NODE_ENV=development
+
+services:
+  database:
+    container_name: database
+    image: postgres
+    restart: unless-stopped
+    volumes:
+      - database-data:/var/lib/postgresql
+    environment:
+      - POSTGRES_USER=unicorn_user
+      - POSTGRES_PASSWORD=magical_password
+      - POSTGRES_DB=calendso
+    networks:
+      - stack
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - stack
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  calcom-deps:
+    <<: *calcom-dev-base
+    command: node .yarn/releases/yarn-4.12.0.cjs install
+
+  calcom-dev:
+    <<: *calcom-dev-base
+    container_name: calcom-dev
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/calcom:cached
+      - calcom-dev-node-modules:/calcom/node_modules
+      - calcom-dev-next-cache:/calcom/apps/web/.next
+      - calcom-dev-turbo-cache:/calcom/.turbo
+    depends_on:
+      database:
+        condition: service_started
+      redis:
+        condition: service_started
+      calcom-deps:
+        condition: service_completed_successfully
+    command: node .yarn/releases/yarn-4.12.0.cjs dev
+
+  calcom-api-dev:
+    <<: *calcom-dev-base
+    container_name: calcom-api-dev
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-5555}:${API_PORT:-5555}"
+    depends_on:
+      database:
+        condition: service_started
+      redis:
+        condition: service_started
+      calcom-deps:
+        condition: service_completed_successfully
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}/${POSTGRES_DB}
+      - DATABASE_DIRECT_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}/${POSTGRES_DB}
+      - DATABASE_READ_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}/${POSTGRES_DB}
+      - DATABASE_WRITE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=development
+      - API_PORT=${API_PORT:-5555}
+    command: node .yarn/releases/yarn-4.12.0.cjs workspace @calcom/api-v2 dev:no-docker
