@@ -59,6 +59,15 @@ type UserWithProfiles = NonNullable<
   Awaited<ReturnType<UserRepository["findByEmailAndIncludeProfilesAndPassword"]>>
 >;
 
+function hasWhapMetadata(user: Pick<UserWithProfiles, "metadata">) {
+  return Boolean(
+    user.metadata &&
+      typeof user.metadata === "object" &&
+      !Array.isArray(user.metadata) &&
+      "whap" in user.metadata
+  );
+}
+
 interface ExtendedOAuthProfile extends Profile {
   email_verified?: boolean; // Google/OIDC standard
   xms_edov?: boolean | string | number; // Azure AD specific
@@ -246,6 +255,8 @@ export async function authorizeCredentials(
 
   // authentication success- but does it meet the minimum password requirements?
   const validateRole = (role: UserPermissionRole) => {
+    if (hasWhapMetadata(user)) return UserPermissionRole.USER;
+
     // User's role is not "ADMIN"
     if (role !== UserPermissionRole.ADMIN) return role;
     // User's identity provider is not "CAL"

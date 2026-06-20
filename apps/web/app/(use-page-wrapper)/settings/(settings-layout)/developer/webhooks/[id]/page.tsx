@@ -1,17 +1,14 @@
 import type { PageProps } from "app/_types";
 import { _generateMetadata } from "app/_utils";
-import { cookies, headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
-import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { WebhookRepository } from "@calcom/features/webhooks/lib/repository/WebhookRepository";
 import prisma from "@calcom/prisma";
 import { APP_NAME } from "@calcom/lib/constants";
 import { MembershipRole } from "@calcom/prisma/enums";
 
-import { buildLegacyRequest } from "@lib/buildLegacyCtx";
-
 import { EditWebhookView } from "~/webhooks/views/webhook-edit-view";
+import { verifyDeveloperSettingsAccess } from "../../verifyDeveloperSettingsAccess";
 
 export const generateMetadata = async ({ params }: { params: Promise<{ id: string }> }) =>
   await _generateMetadata(
@@ -23,10 +20,7 @@ export const generateMetadata = async ({ params }: { params: Promise<{ id: strin
   );
 
 const Page = async ({ params: _params }: PageProps) => {
-  const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
-  if (!session?.user?.id) {
-    return redirect("/auth/login");
-  }
+  const session = await verifyDeveloperSettingsAccess("/settings/developer/webhooks");
 
   const params = await _params;
   const id = typeof params?.id === "string" ? params.id : undefined;

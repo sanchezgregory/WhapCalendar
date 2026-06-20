@@ -855,6 +855,7 @@ export const signupSchema = z.object({
   }),
   language: z.string().optional(),
   token: z.string().optional(),
+  invite: z.string().optional(),
 });
 
 export const ZVerifyCodeInputSchema = z.object({

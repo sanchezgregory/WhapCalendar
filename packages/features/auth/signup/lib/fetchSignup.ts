@@ -6,6 +6,7 @@ type SignupData = {
   password: string;
   language: string;
   token?: string;
+  invite?: string;
 };
 
 type SignupSuccessResponse = {

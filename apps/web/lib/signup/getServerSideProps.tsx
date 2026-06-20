@@ -10,6 +10,8 @@ import { IS_GOOGLE_LOGIN_ENABLED } from "@server/lib/constants";
 import type { GetServerSidePropsContext } from "next";
 import { z } from "zod";
 
+import { verifyWhapCalendarInvitation } from "../whapCalendarInvitations";
+
 const checkValidEmail = (email: string) => emailSchema.safeParse(email).success;
 
 const querySchema = z.object({
@@ -29,6 +31,7 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
   const onboardingV3Enabled = await featuresRepository.checkIfFeatureIsEnabledGlobally("onboarding-v3");
 
   const token = z.string().optional().parse(ctx.query.token);
+  const invite = z.string().optional().parse(ctx.query.invite);
   const redirectUrlData = z
     .string()
     .refine((value) => value.startsWith(WEBAPP_URL), {
@@ -62,6 +65,26 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     onboardingV3Enabled,
   };
 
+  if (!invite) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/auth/error?error=${encodeURIComponent("Signup is only available for Whap mediators")}`,
+      },
+    } as const;
+  }
+
+  const whapInvitation = await verifyWhapCalendarInvitation(invite);
+
+  if (!whapInvitation.valid || !whapInvitation.email) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/auth/error?error=${encodeURIComponent("Whap Calendar invitation is missing or has expired")}`,
+      },
+    } as const;
+  }
+
   if ((process.env.NEXT_PUBLIC_DISABLE_SIGNUP === "true" && !token) || signupDisabled) {
     return {
       redirect: {
@@ -73,15 +96,19 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
 
   // no token given, treat as a normal signup without verification token
   if (!token) {
-    // username + email prepopulated from query params
-    const queryData = querySchema.safeParse(ctx.query);
+    const queryData = querySchema.safeParse({
+      ...ctx.query,
+      email: whapInvitation.email,
+    });
     return {
       props: JSON.parse(
         JSON.stringify({
           ...props,
+          invite,
+          whapInvitation,
           prepopulateFormValues: {
-            username: queryData.success ? queryData.data.username : null,
-            email: queryData.success ? queryData.data.email : null,
+            username: whapInvitation.username || (queryData.success ? queryData.data.username : ""),
+            email: whapInvitation.email,
           },
         })
       ),
@@ -197,6 +224,8 @@ export const getServerSideProps = async (ctx: GetServerSidePropsContext) => {
     props: {
       ...props,
       token,
+      invite,
+      whapInvitation,
       prepopulateFormValues:
         !isOrgInviteByLink && isValidEmail
           ? {

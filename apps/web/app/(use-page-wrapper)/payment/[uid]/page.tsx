@@ -1,7 +1,6 @@
-import { APP_NAME } from "@calcom/lib/constants";
 import { buildLegacyCtx } from "@lib/buildLegacyCtx";
 import type { PageProps } from "app/_types";
-import { _generateMetadata } from "app/_utils";
+import { PAGE_TITLE_APP_NAME, _generateMetadata } from "app/_utils";
 import { withAppDirSsr } from "app/WithAppDirSsr";
 import { cookies, headers } from "next/headers";
 import PaymentPage from "./PaymentPage";
@@ -50,7 +49,7 @@ export const generateMetadata = async ({ params, searchParams }: PageProps) => {
   );
   const eventName = props.booking.title;
   return await _generateMetadata(
-    (t) => `${t("payment")} | ${eventName} | ${APP_NAME}`,
+    (t) => `${t("payment")} | ${eventName} | ${PAGE_TITLE_APP_NAME}`,
     () => "",
     undefined,
     undefined,

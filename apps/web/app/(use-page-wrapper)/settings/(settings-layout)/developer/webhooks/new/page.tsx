@@ -6,6 +6,7 @@ import { appsRouter } from "@calcom/trpc/server/routers/viewer/apps/_router";
 import { webhookRouter } from "@calcom/trpc/server/routers/viewer/webhook/_router";
 
 import { NewWebhookView } from "~/webhooks/views/webhook-new-view";
+import { verifyDeveloperSettingsAccess } from "../../verifyDeveloperSettingsAccess";
 
 export const generateMetadata = async () =>
   await _generateMetadata(
@@ -17,6 +18,8 @@ export const generateMetadata = async () =>
   );
 
 const Page = async () => {
+  await verifyDeveloperSettingsAccess("/settings/developer/webhooks/new");
+
   const [appsCaller, webhookCaller] = await Promise.all([
     createRouterCaller(appsRouter),
     createRouterCaller(webhookRouter),

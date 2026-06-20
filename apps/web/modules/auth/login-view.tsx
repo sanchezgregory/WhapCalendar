@@ -1,7 +1,7 @@
 "use client";
 
 import { ErrorCode } from "@calcom/features/auth/lib/ErrorCode";
-import { HOSTED_CAL_FEATURES, WEBAPP_URL, WEBSITE_URL } from "@calcom/lib/constants";
+import { HOSTED_CAL_FEATURES, WEBAPP_URL } from "@calcom/lib/constants";
 import { emailRegex } from "@calcom/lib/emailSchema";
 import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
 import { useCompatSearchParams } from "@calcom/lib/hooks/useCompatSearchParams";
@@ -43,6 +43,8 @@ const MicrosoftIcon = () => (
 const GoogleIcon = () => (
   <img className="size-4" src="/google-icon-colored.svg" alt="" />
 );
+
+const WHAP_PROFILE_URL = `${process.env.NEXT_PUBLIC_WHAP_URL || "http://localhost:8001"}/settings/profile`;
 
 function BackgroundGrid() {
   const rows = 9;
@@ -183,12 +185,13 @@ export default function Login({
         <div className="w-full rounded-xl border border-subtle bg-default p-10 shadow-sm">
           {/* Logo */}
           <div className="mb-2 text-center">
-            <h1 className="font-cal text-xl font-bold text-emphasis">Cal.diy</h1>
+            <img className="mx-auto mb-3 size-12" src="/whap-icon.svg" alt="Whap" />
+            <h1 className="font-cal text-xl font-bold text-emphasis">{t("whap_calendar_title")}</h1>
           </div>
 
           {/* Heading */}
           <p className="mb-8 text-center text-sm text-subtle" data-testid="login-subtitle">
-            {twoFactorRequired ? t("2fa_code") : t("welcome_back_sign_in")}
+            {twoFactorRequired ? t("2fa_code") : t("whap_calendar_sign_in")}
           </p>
 
           <FormProvider {...methods}>
@@ -209,7 +212,7 @@ export default function Login({
                         });
                       }}>
                       <GoogleIcon />
-                      <span>{t("signin_with_google")}</span>
+                      <span>{t("whap_signin_with_google")}</span>
                       {lastUsed === "google" && <LastUsed />}
                     </Button>
                   )}
@@ -226,7 +229,7 @@ export default function Login({
                         });
                       }}>
                       <MicrosoftIcon />
-                      <span>{t("signin_with_microsoft")}</span>
+                      <span>{t("whap_signin_with_microsoft")}</span>
                       {lastUsed === "microsoft" && <LastUsed />}
                     </Button>
                   )}
@@ -248,7 +251,7 @@ export default function Login({
                 <div className="space-y-6">
                   {/* Email Field */}
                   <Field>
-                    <FieldLabel>{t("email")}</FieldLabel>
+                    <FieldLabel>{t("whap_email")}</FieldLabel>
                     <Input
                       id="email"
                       type="email"
@@ -266,9 +269,9 @@ export default function Login({
                   {/* Password Field */}
                   <Field>
                     <div className="flex w-full items-center justify-between">
-                      <FieldLabel>{t("password")}</FieldLabel>
+                      <FieldLabel>{t("whap_password")}</FieldLabel>
                       <Link href="/auth/forgot-password" className="text-sm text-subtle hover:text-emphasis">
-                        {t("forgot")}
+                        {t("whap_forgot_password")}
                       </Link>
                     </div>
                     <InputGroup className="overflow-hidden">
@@ -314,7 +317,7 @@ export default function Login({
                 variant="outline"
                 className="mt-8 w-full"
                 disabled={formState.isSubmitting}>
-                {twoFactorRequired ? t("submit") : t("continue")}
+                {twoFactorRequired ? t("submit") : t("whap_continue")}
               </Button>
             </form>
 
@@ -367,18 +370,13 @@ export default function Login({
 
         {/* Footer Links */}
         {!twoFactorRequired && (
-          <div className="mt-6 flex items-center justify-center gap-4 text-center">
+          <div className="mt-6 flex flex-col items-center justify-center gap-2 text-center">
             {showSignupLink && (
-              <Link
-                href={
-                  callbackUrl
-                    ? `${WEBSITE_URL}/signup?redirect=${encodeURIComponent(callbackUrl)}`
-                    : `${WEBSITE_URL}/signup`
-                }
-                className="text-sm font-medium text-emphasis hover:underline">
-                {t("create_account")}
+              <Link href={WHAP_PROFILE_URL} className="text-sm font-medium text-emphasis hover:underline">
+                {t("whap_create_account")}
               </Link>
             )}
+            <p className="text-xs text-subtle">{t("whap_powered_by_caldiy")}</p>
           </div>
         )}
       </div>

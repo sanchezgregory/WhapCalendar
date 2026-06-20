@@ -1,15 +1,11 @@
 import { createRouterCaller } from "app/_trpc/context";
 import { _generateMetadata } from "app/_utils";
-import { cookies, headers } from "next/headers";
-import { redirect } from "next/navigation";
 
-import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { APP_NAME } from "@calcom/lib/constants";
 import { webhookRouter } from "@calcom/trpc/server/routers/viewer/webhook/_router";
 
-import { buildLegacyRequest } from "@lib/buildLegacyCtx";
-
 import WebhooksView from "~/webhooks/views/webhooks-view";
+import { verifyDeveloperSettingsAccess } from "../../verifyDeveloperSettingsAccess";
 
 export const generateMetadata = async () =>
   await _generateMetadata(
@@ -21,10 +17,7 @@ export const generateMetadata = async () =>
   );
 
 const WebhooksViewServerWrapper = async () => {
-  const session = await getServerSession({ req: buildLegacyRequest(await headers(), await cookies()) });
-  if (!session?.user?.id) {
-    redirect("/auth/login");
-  }
+  await verifyDeveloperSettingsAccess("/settings/developer/webhooks");
 
   const caller = await createRouterCaller(webhookRouter);
   const data = await caller.getByViewer();

@@ -192,6 +192,8 @@ function addOrUpdateQueryParam(url: string, key: string, value: string) {
 export default function Signup({
   prepopulateFormValues,
   token,
+  invite,
+  whapInvitation,
   orgSlug,
   isGoogleLoginEnabled,
   isOutlookLoginEnabled,
@@ -206,7 +208,7 @@ export default function Signup({
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isMicrosoftLoading, setIsMicrosoftLoading] = useState(false);
   const [accountUnderReview, setAccountUnderReview] = useState(false);
-  const [displayEmailForm, setDisplayEmailForm] = useState(token);
+  const [displayEmailForm, setDisplayEmailForm] = useState(!!token || !!invite);
   const [turnstileKey, setTurnstileKey] = useState(0);
   const searchParams = useCompatSearchParams();
   const { t, i18n } = useLocale();
@@ -235,10 +237,11 @@ export default function Signup({
   }
 
   const loadingSubmitState = isSubmitSuccessful || isSubmitting;
-  const displayBackButton = token ? false : displayEmailForm;
+  const displayBackButton = token || invite ? false : displayEmailForm;
 
   const signUp: SubmitHandler<FormValues> = async (_data) => {
     const { cfToken, ...data } = _data;
+    const signupEmail = whapInvitation?.email || data.email;
 
     posthog.capture("signup_form_submitted", {
       has_token: !!token,
@@ -252,8 +255,10 @@ export default function Signup({
       const result = await fetchSignup(
         {
           ...data,
+          email: signupEmail,
           language: i18n.language,
           token,
+          invite,
         },
         cfToken
       );
@@ -288,7 +293,7 @@ export default function Signup({
       }
 
       if (process.env.NEXT_PUBLIC_GTM_ID) {
-        pushGTMEvent("create_account", { email: data.email, user: data.username, lang: data.language });
+        pushGTMEvent("create_account", { email: signupEmail, user: data.username, lang: data.language });
       }
 
       const gettingStartedPath = onboardingV3Enabled ? "onboarding/getting-started" : "getting-started";
@@ -305,12 +310,17 @@ export default function Signup({
       };
 
       const constructCallBackUrl = () => {
+        if (whapInvitation) {
+          return `${WEBAPP_URL}/event-types`;
+        }
+
         const callbackUrlSearchParams = searchParams?.get("callbackUrl");
         return callbackUrlSearchParams ? constructCallBackIfUrlPresent() : constructCallBackIfUrlNotPresent();
       };
 
       await signIn<"credentials">("credentials", {
         ...data,
+        email: signupEmail,
         callbackUrl: constructCallBackUrl(),
       });
     } catch (err) {
@@ -415,20 +425,8 @@ export default function Signup({
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
-                  <h1 className="font-cal text-[28px] leading-none">
-                    {IS_CALCOM ? t("create_your_calcom_account") : t("create_your_account")}
-                  </h1>
-                  {IS_CALCOM ? (
-                    <p className="font-medium text-base text-subtle leading-5">
-                      {t("cal_signup_description")}
-                    </p>
-                  ) : (
-                    <p className="font-medium text-base text-subtle leading-5">
-                      {t("calcom_explained", {
-                        appName: APP_NAME,
-                      })}
-                    </p>
-                  )}
+                  <h1 className="font-cal text-[28px] leading-none">{t("whap_signup_title")}</h1>
+                  <p className="font-medium text-base text-subtle leading-5">{t("whap_signup_description")}</p>
                   {IS_CALCOM && (
                     <div className="mt-12">
                       <SelectField
@@ -505,7 +503,7 @@ export default function Signup({
                           username={watch("username") || ""}
                           premium={premiumUsername}
                           usernameTaken={usernameTaken}
-                          disabled={!!orgSlug}
+                          disabled={!!orgSlug || !!whapInvitation?.username}
                           setUsernameTaken={(value) => setUsernameTaken(value)}
                           data-testid="signup-usernamefield"
                           setPremium={(value) => setPremiumUsername(value)}
@@ -531,7 +529,7 @@ export default function Signup({
                         placeholder="john@doe.com"
                         type="email"
                         autoComplete="email"
-                        disabled={prepopulateFormValues?.email}
+                        disabled={!!whapInvitation?.email || !!prepopulateFormValues?.email}
                         data-testid="signup-emailfield"
                       />
 

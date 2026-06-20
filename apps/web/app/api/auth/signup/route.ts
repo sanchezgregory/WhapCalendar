@@ -13,7 +13,23 @@ import logger from "@calcom/lib/logger";
 import { piiHasher } from "@calcom/lib/server/PiiHasher";
 import { checkCfTurnstileToken } from "@calcom/lib/server/checkCfTurnstileToken";
 import { prisma } from "@calcom/prisma";
+import { UserPermissionRole } from "@calcom/prisma/enums";
 import { signupSchema } from "@calcom/prisma/zod-utils";
+
+import {
+  consumeWhapCalendarInvitation,
+  verifyWhapCalendarInvitation,
+} from "@lib/whapCalendarInvitations";
+
+type WhapInvitation = {
+  token: string;
+  email: string;
+  name?: string | null;
+  about?: string | null;
+  username: string;
+  whapUserId?: number;
+  mediatorProfileId?: number;
+};
 
 async function ensureSignupIsEnabled(body: Record<string, string>) {
   const { token } = signupSchema
@@ -36,6 +52,48 @@ async function ensureSignupIsEnabled(body: Record<string, string>) {
   }
 }
 
+async function requireValidWhapInvitation(body: Record<string, string>): Promise<WhapInvitation> {
+  const { invite, email } = signupSchema
+    .pick({
+      invite: true,
+      email: true,
+    })
+    .parse(body);
+
+  if (!invite) {
+    throw new HttpError({
+      statusCode: 403,
+      message: "Signup is only available for Whap mediators",
+    });
+  }
+
+  const invitation = await verifyWhapCalendarInvitation(invite);
+
+  if (!invitation.valid || !invitation.email || !invitation.username) {
+    throw new HttpError({
+      statusCode: 403,
+      message: "Whap Calendar invitation is missing or has expired",
+    });
+  }
+
+  if (invitation.email.toLowerCase() !== email.toLowerCase()) {
+    throw new HttpError({
+      statusCode: 403,
+      message: "Signup email must match the Whap mediator invitation",
+    });
+  }
+
+  return {
+    token: invite,
+    email: invitation.email,
+    name: invitation.name,
+    about: invitation.about,
+    username: invitation.username,
+    whapUserId: invitation.whap_user_id,
+    mediatorProfileId: invitation.mediator_profile_id,
+  };
+}
+
 async function handler(req: NextRequest) {
   const remoteIp = getIP(req);
   // Use a try catch instead of returning res every time
@@ -53,7 +111,14 @@ async function handler(req: NextRequest) {
       remoteIp,
     });
 
-    await ensureSignupIsEnabled(body);
+    const whapInvitation = await requireValidWhapInvitation(body);
+    const signupBody = {
+      ...body,
+      email: whapInvitation.email,
+      username: whapInvitation.username,
+    };
+
+    await ensureSignupIsEnabled(signupBody);
 
     /**
      * Im not sure its worth merging these two handlers. They are different enough to be separate.
@@ -63,10 +128,16 @@ async function handler(req: NextRequest) {
      * @zomars: We need to be able to test this with E2E. They way it's done RN it will never run on CI.
      */
     if (IS_PREMIUM_USERNAME_ENABLED) {
-      return await calcomSignupHandler(body, query);
+      const response = await calcomSignupHandler(signupBody, query);
+      await consumeInvitationAfterSuccessfulSignup(response, whapInvitation);
+
+      return response;
     }
 
-    return await selfHostedSignupHandler(body);
+    const response = await selfHostedSignupHandler(signupBody);
+    await consumeInvitationAfterSuccessfulSignup(response, whapInvitation);
+
+    return response;
   } catch (e) {
     if (e instanceof HttpError) {
       return NextResponse.json({ message: e.message }, { status: e.statusCode });
@@ -74,6 +145,45 @@ async function handler(req: NextRequest) {
     logger.error(e);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
   }
+}
+
+async function consumeInvitationAfterSuccessfulSignup(response: NextResponse, invitation: WhapInvitation) {
+  if (response.status < 200 || response.status >= 300) {
+    return;
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: invitation.email.toLowerCase() },
+    select: { id: true, metadata: true },
+  });
+
+  if (!user) {
+    return;
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      role: UserPermissionRole.USER,
+      name: invitation.name || undefined,
+      bio: invitation.about || undefined,
+      metadata: {
+        ...((user.metadata && typeof user.metadata === "object" && !Array.isArray(user.metadata)
+          ? user.metadata
+          : {}) as Record<string, unknown>),
+        whap: {
+          userId: invitation.whapUserId,
+          mediatorProfileId: invitation.mediatorProfileId,
+        },
+      },
+    },
+  });
+
+  await consumeWhapCalendarInvitation({
+    token: invitation.token,
+    calDiyUserId: String(user.id),
+    email: invitation.email,
+  });
 }
 
 export const POST = defaultResponderForAppDir(handler);

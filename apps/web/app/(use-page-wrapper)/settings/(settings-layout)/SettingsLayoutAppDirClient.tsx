@@ -5,6 +5,7 @@ import type { TeamFeatures } from "@calcom/features/flags/config";
 import { IS_CALCOM, WEBAPP_URL } from "@calcom/lib/constants";
 import { getPlaceholderAvatar } from "@calcom/lib/defaultAvatarImage";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
+import hasKeyInMetadata from "@calcom/lib/hasKeyInMetadata";
 import { useIsStandalone } from "@calcom/lib/hooks/useIsStandalone";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { IdentityProvider, UserPermissionRole } from "@calcom/prisma/enums";
@@ -277,9 +278,10 @@ const useTabs = ({
   permissions?: SettingsPermissions;
 }) => {
   const session = useSession();
-  const { data: user } = trpc.viewer.me.get.useQuery({ includePasswordAdded: true });
+  const { data: user, isLoading: isUserLoading } = trpc.viewer.me.get.useQuery({ includePasswordAdded: true });
   const orgBranding = null as { id?: number; slug?: string; name?: string; logoUrl?: string | null } | null;
   const isAdmin = session.data?.user.role === UserPermissionRole.ADMIN;
+  const isWhapUser = user ? hasKeyInMetadata(user, "whap") : false;
 
   const processTabsMemod = useMemo(() => {
     const processedTabs = getTabs(orgBranding).map((tab) => {
@@ -367,13 +369,23 @@ const useTabs = ({
 
     // check if name is in adminRequiredKeys
     return processedTabs.filter((tab) => {
+      if ((isUserLoading || isWhapUser) && tab.href === "/settings/developer") return false;
       if (organizationRequiredKeys.includes(tab.name)) return !!orgBranding;
       if (tab.name === "other_teams" && !permissions?.canUpdateOrganization) return false;
 
       if (isAdmin) return true;
       return !adminRequiredKeys.includes(tab.name);
     });
-  }, [isAdmin, orgBranding, user, isDelegationCredentialEnabled, isPbacEnabled, permissions]);
+  }, [
+    isAdmin,
+    isUserLoading,
+    isWhapUser,
+    orgBranding,
+    user,
+    isDelegationCredentialEnabled,
+    isPbacEnabled,
+    permissions,
+  ]);
 
   return processTabsMemod;
 };
