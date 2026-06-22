@@ -5,6 +5,9 @@ import { showToast } from "@calcom/ui/components/toast";
 import posthog from "posthog-js";
 import type { NavigationItemType } from "./navigation/NavigationItem";
 
+const WHAP_PROFILE_URL =
+  process.env.NEXT_PUBLIC_WHAP_PROFILE_URL || "http://localhost:8001/backoffice/settings/profile";
+
 type BottomNavItemsProps = {
   publicPageUrl: string;
 };
@@ -29,6 +32,12 @@ export function useBottomNavItems({ publicPageUrl }: BottomNavItemsProps): Navig
         showToast(t("link_copied"), "success");
       },
       icon: "copy",
+    },
+    {
+      name: "go_to_whap",
+      href: WHAP_PROFILE_URL,
+      icon: "arrow-left",
+      target: "_self",
     },
     IS_DUB_REFERRALS_ENABLED
       ? {
