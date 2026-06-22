@@ -123,6 +123,7 @@ export default function Success(props: PageProps) {
 
   const {
     allRemainingBookings,
+    eventTypeSlug,
     isSuccessBookingPage,
     cancel: isCancellationMode,
     formerTime,
@@ -136,6 +137,8 @@ export default function Success(props: PageProps) {
   const attendeeTimeZone = bookingInfo?.attendees.find((attendee) => attendee.email === email)?.timeZone;
 
   const isFeedbackMode = !!(noShow || rating);
+  const isWhapSession =
+    eventTypeSlug === "whap-session" || ("slug" in eventType && eventType.slug === "whap-session");
   const tz = props.tz ? props.tz : isSuccessBookingPage && attendeeTimeZone ? attendeeTimeZone : timeZone();
 
   const location = bookingInfo.location as ReturnType<typeof getEventLocationValue>;
@@ -475,7 +478,7 @@ export default function Success(props: PageProps) {
           status={status}
         />
       )}
-      {isLoggedIn && !isEmbed && !isFeedbackMode && (
+      {isLoggedIn && !isEmbed && !isFeedbackMode && !isWhapSession && (
         <div className="-mb-4 ml-4 mt-2">
           <Link
             href={allRemainingBookings ? "/bookings/recurring" : "/bookings/upcoming"}
@@ -867,6 +870,7 @@ export default function Success(props: PageProps) {
                       isReschedulable &&
                       !isRerouting &&
                       canCancelOrReschedule &&
+                      !isWhapSession &&
                       (!isCancellationMode ? (
                         <>
                           {/* Only show section if there's at least one actionable option */}
@@ -960,7 +964,11 @@ export default function Success(props: PageProps) {
                         </Button>
                       </div>
                     )}
-                    {!needsConfirmation && !isCancellationMode && isReschedulable && !!calculatedDuration && (
+                    {!needsConfirmation &&
+                      !isCancellationMode &&
+                      isReschedulable &&
+                      !!calculatedDuration &&
+                      !isWhapSession && (
                       <>
                         <hr className="border-subtle mt-8" />
                         <div className="text-default align-center flex flex-row justify-center pt-8">

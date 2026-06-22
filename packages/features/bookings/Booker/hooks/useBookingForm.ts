@@ -20,6 +20,7 @@ export interface IUseBookingForm {
   extraOptions: Record<string, string | string[]>;
   prefillFormParams: {
     guests: string[];
+    email: string | null;
     name: string | null;
   };
   clientId?: string;

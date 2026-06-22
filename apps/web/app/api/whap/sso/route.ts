@@ -97,6 +97,7 @@ export async function GET(req: NextRequest) {
       username: true,
       role: true,
       locale: true,
+      completedOnboarding: true,
       profiles: {
         select: { id: true, uid: true, username: true, organizationId: true },
         orderBy: { id: "asc" },
@@ -111,6 +112,13 @@ export async function GET(req: NextRequest) {
       email: payload.email,
     });
     return NextResponse.redirect(`${WEBAPP_URL}/auth/login`);
+  }
+
+  if (!user.completedOnboarding || user.locale !== "es") {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { completedOnboarding: true, locale: "es" },
+    });
   }
 
   const nextAuthSecret = process.env.NEXTAUTH_SECRET;
@@ -130,7 +138,7 @@ export async function GET(req: NextRequest) {
       email: user.email,
       username: user.username,
       role: user.role,
-      locale: user.locale || "en",
+      locale: "es",
       profileId: profile?.id ?? null,
       upId: profile?.uid ?? `usr-${user.id}`,
       orgAwareUsername: profile?.username ?? user.username,

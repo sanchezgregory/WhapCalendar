@@ -1,11 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { v4 as uuid } from "uuid";
 import { z } from "zod";
 
 import logger from "@calcom/lib/logger";
 import { prisma } from "@calcom/prisma";
-import { CreationSource, IdentityProvider, UserPermissionRole } from "@calcom/prisma/enums";
+import { CreationSource, IdentityProvider, UserPermissionRole, WebhookTriggerEvents } from "@calcom/prisma/enums";
 
 const LOCAL_SHARED_SECRET = "local-whap-calendar-secret";
+const WHAP_WEBHOOK_TRIGGERS = [WebhookTriggerEvents.BOOKING_CREATED, WebhookTriggerEvents.BOOKING_RESCHEDULED];
 
 const provisionSchema = z.object({
   whap_user_id: z.number(),
@@ -36,11 +38,60 @@ function getSharedSecret() {
   return "";
 }
 
+function getWhapWebhookUrl() {
+  return `${(process.env.WHAP_API_BASE_URL || "http://host.docker.internal:8001/api").replace(/\/$/, "")}/webhooks/cal-diy`;
+}
+
 function hasValidSecret(req: NextRequest) {
   const configuredSecret = getSharedSecret();
   const providedSecret = req.headers.get("X-Whap-Calendar-Secret") || "";
 
   return configuredSecret !== "" && configuredSecret === providedSecret;
+}
+
+async function ensureWhapBookingWebhook(userId: number, payload: z.infer<typeof provisionSchema>) {
+  const subscriberUrl = getWhapWebhookUrl();
+  const secret = getSharedSecret();
+
+  if (!secret) {
+    logger.warn("Whap user provision skipped webhook setup: missing shared secret", {
+      whapUserId: payload.whap_user_id,
+      mediatorProfileId: payload.mediator_profile_id,
+      userId,
+      subscriberUrl,
+    });
+
+    return;
+  }
+
+  await prisma.webhook.upsert({
+    where: {
+      courseIdentifier: {
+        userId,
+        subscriberUrl,
+      },
+    },
+    create: {
+      id: uuid(),
+      userId,
+      subscriberUrl,
+      secret,
+      active: true,
+      eventTriggers: WHAP_WEBHOOK_TRIGGERS,
+    },
+    update: {
+      secret,
+      active: true,
+      eventTriggers: WHAP_WEBHOOK_TRIGGERS,
+    },
+  });
+
+  logger.info("Whap booking webhook ensured", {
+    whapUserId: payload.whap_user_id,
+    mediatorProfileId: payload.mediator_profile_id,
+    userId,
+    subscriberUrl,
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -107,7 +158,9 @@ export async function POST(req: NextRequest) {
           username,
           bio: payload.about,
           role: UserPermissionRole.USER,
+          locale: "es",
           emailVerified: new Date(),
+          completedOnboarding: true,
           identityProvider: IdentityProvider.CAL,
           metadata,
         },
@@ -120,13 +173,17 @@ export async function POST(req: NextRequest) {
           username,
           bio: payload.about,
           role: UserPermissionRole.USER,
+          locale: "es",
           emailVerified: new Date(),
+          completedOnboarding: true,
           identityProvider: IdentityProvider.CAL,
           creationSource: CreationSource.WEBAPP,
           metadata,
         },
         select: { id: true, email: true, username: true, role: true },
       });
+
+  await ensureWhapBookingWebhook(user.id, payload);
 
   const responseBody = {
     ok: true,

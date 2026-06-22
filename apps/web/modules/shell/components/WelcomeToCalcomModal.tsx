@@ -1,6 +1,5 @@
 "use client";
 
-import { APP_NAME } from "@calcom/lib/constants";
 import { useLocale } from "@calcom/lib/hooks/useLocale";
 import { Button } from "@calcom/ui/components/button";
 import { Dialog, DialogContent } from "@calcom/ui/components/dialog";
@@ -10,13 +9,10 @@ import { CheckIcon, UserIcon } from "@coss/ui/icons";
 import { useWelcomeToCalcomModal } from "../hooks/useWelcomeToCalcomModal";
 
 const features = [
-  "unlimited_calendars",
-  "unlimited_event_types",
-  "integrate_with_favorite_apps",
-  "accept_payments_via_stripe",
-  "html_react_embed",
-  "cal_ai_phone_agent",
-  "cal_video",
+  "whap_calendar_welcome_feature_availability",
+  "whap_calendar_welcome_feature_session_types",
+  "whap_calendar_welcome_feature_calendar_sync",
+  "whap_calendar_welcome_feature_manage_bookings",
 ];
 
 export function WelcomeToCalcomModal() {
@@ -47,9 +43,9 @@ export function WelcomeToCalcomModal() {
             {/* Center origin */}
             <div className="absolute left-1/2 top-1/2" style={{ transform: "translate(-50%, -50%)" }}>
               {/* Rings */}
-              {RINGS.map((r, i) => (
+              {RINGS.map((r) => (
                 <div
-                  key={i}
+                  key={r}
                   className="pointer-events-none absolute rounded-full border"
                   style={{
                     width: 2 * r,
@@ -79,9 +75,9 @@ export function WelcomeToCalcomModal() {
 
           <div className="mb-2 flex flex-col gap-2 text-center">
             <h2 className="font-cal text-emphasis text-2xl leading-none">
-              {t("welcome_to_calcom", { appName: APP_NAME })}
+              {t("whap_calendar_welcome_title")}
             </h2>
-            <p className="text-default text-sm leading-normal">{t("personal_welcome_description")}</p>
+            <p className="text-default text-sm leading-normal">{t("whap_calendar_welcome_description")}</p>
           </div>
 
           <div className="mb-2 flex flex-col gap-3">
@@ -101,10 +97,10 @@ export function WelcomeToCalcomModal() {
             target="_blank"
             EndIcon="external-link"
             className="pointer-events-none opacity-0">
-            {t("learn_more")}
+            {t("whap_calendar_welcome_learn_more")}
           </Button>
           <Button color="primary" onClick={closeModal}>
-            {t("continue")}
+            {t("whap_calendar_welcome_continue")}
           </Button>
         </div>
       </DialogContent>

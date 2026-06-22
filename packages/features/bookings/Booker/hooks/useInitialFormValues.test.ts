@@ -41,6 +41,7 @@ describe("useInitialFormValues - Autofill Disable Feature", () => {
     extraOptions: {},
     prefillFormParams: {
       guests: [],
+      email: null,
       name: null,
     },
   };
@@ -72,6 +73,7 @@ describe("useInitialFormValues - Autofill Disable Feature", () => {
 
       const prefillFormParams = {
         guests: ["guest1@example.com", "guest2@example.com"],
+        email: null,
         name: "John Doe",
       };
 
@@ -94,6 +96,37 @@ describe("useInitialFormValues - Autofill Disable Feature", () => {
       });
     });
 
+    it("should use prefill email before session email", async () => {
+      const eventType: Pick<BookerEvent, "bookingFields" | "team" | "owner"> = {
+        bookingFields: mockBookingFields,
+        team: null,
+        owner: null,
+      };
+
+      const { result } = renderHook(() =>
+        useInitialFormValues({
+          ...baseProps,
+          eventType,
+          email: "mediator@example.com",
+          hasSession: true,
+          prefillFormParams: {
+            guests: [],
+            email: "client@example.com",
+            name: "Client User",
+          },
+        })
+      );
+
+      await waitFor(() => {
+        expect(result.current.values.responses).toBeDefined();
+      });
+
+      expect(result.current.values.responses).toMatchObject({
+        email: "client@example.com",
+        name: "Client User",
+      });
+    });
+
     it("should use URL parameters when organizationSettings is undefined", async () => {
       const eventType: Pick<BookerEvent, "bookingFields" | "team" | "owner"> = {
         bookingFields: mockBookingFields,
@@ -107,6 +140,7 @@ describe("useInitialFormValues - Autofill Disable Feature", () => {
 
       const prefillFormParams = {
         guests: [],
+        email: null,
         name: "Jane Smith",
       };
 
@@ -151,6 +185,7 @@ describe("useInitialFormValues - Autofill Disable Feature", () => {
 
       const prefillFormParams = {
         guests: ["guest1@example.com"],
+        email: null,
         name: "John Doe",
       };
 
@@ -191,6 +226,7 @@ describe("useInitialFormValues - Autofill Disable Feature", () => {
 
       const prefillFormParams = {
         guests: [],
+        email: null,
         name: "Parent Team User",
       };
 
@@ -232,6 +268,7 @@ describe("useInitialFormValues - Autofill Disable Feature", () => {
 
       const prefillFormParams = {
         guests: [],
+        email: null,
         name: "Personal Event User",
       };
 

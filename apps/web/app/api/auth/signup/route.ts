@@ -165,6 +165,8 @@ async function consumeInvitationAfterSuccessfulSignup(response: NextResponse, in
     where: { id: user.id },
     data: {
       role: UserPermissionRole.USER,
+      locale: "es",
+      completedOnboarding: true,
       name: invitation.name || undefined,
       bio: invitation.about || undefined,
       metadata: {

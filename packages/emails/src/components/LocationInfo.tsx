@@ -37,18 +37,16 @@ export function LocationInfo(props: { calEvent: CalendarEvent; t: TFunction }) {
             title={t("meeting_url")}
             style={{ color: "#101010" }}
             rel="noreferrer">
-            {providerName || "Link"}
+            {providerName || t("link")}
           </a>
         }
         extraInfo={
           meetingUrl && (
             <div style={{ color: "#494949", fontWeight: 400, lineHeight: "24px" }}>
-              <>
-                {t("meeting_url")}:{" "}
-                <a href={meetingUrl} title={t("meeting_url")} style={{ color: "#3E3E3E" }}>
-                  {meetingUrl}
-                </a>
-              </>
+              {t("meeting_url")}:{" "}
+              <a href={meetingUrl} title={t("meeting_url")} style={{ color: "#3E3E3E" }}>
+                {meetingUrl}
+              </a>
             </div>
           )
         }
@@ -78,7 +76,7 @@ export function LocationInfo(props: { calEvent: CalendarEvent; t: TFunction }) {
       extraInfo={
         (providerName === "Zoom" || providerName === "Google") && props.calEvent.requiresConfirmation ? (
           <p style={{ color: "#494949", fontWeight: 400, lineHeight: "24px" }}>
-            <>{t("meeting_url_provided_after_confirmed")}</>
+            {t("meeting_url_provided_after_confirmed")}
           </p>
         ) : null
       }

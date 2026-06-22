@@ -19,6 +19,7 @@ type UseInitialFormValuesProps = {
   extraOptions: Record<string, string | string[]>;
   prefillFormParams: {
     guests: string[];
+    email: string | null;
     name: string | null;
   };
   clientId?: string;
@@ -133,7 +134,10 @@ export function useInitialFormValues({
         }
 
         return {
-          email: rescheduledEmail || (parsedQuery["email"] ? parsedQuery["email"] : (email ?? "")),
+          email:
+            rescheduledEmail ||
+            prefillFormParams.email ||
+            (parsedQuery["email"] ? parsedQuery["email"] : email ?? ""),
           name: rescheduledName || (parsedQuery["name"] ? parsedQuery["name"] : (name ?? username ?? "")),
         };
       })();

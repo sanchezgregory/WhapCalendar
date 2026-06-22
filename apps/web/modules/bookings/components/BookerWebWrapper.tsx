@@ -32,6 +32,21 @@ export type BookerWebWrapperAtomProps = BookerProps & {
   eventData?: NonNullable<Awaited<ReturnType<typeof getPublicEvent>>>;
 };
 
+const getWhapContextValue = (context: string | null | undefined, keys: string[]) => {
+  if (!context) return null;
+
+  try {
+    const parsedContext = JSON.parse(context) as Record<string, unknown>;
+    const value = keys
+      .map((key) => parsedContext[key])
+      .find((value) => typeof value === "string" && value.trim());
+
+    return typeof value === "string" && value.trim() ? value : null;
+  } catch {
+    return null;
+  }
+};
+
 const BookerWebWrapperComponent = (props: BookerWebWrapperAtomProps): JSX.Element => {
   const router = useRouter();
   const pathname = usePathname();
@@ -108,18 +123,26 @@ const BookerWebWrapperComponent = (props: BookerWebWrapperAtomProps): JSX.Elemen
       {}
     );
   const whapContext = searchParams?.get("whap_context");
+  const clientName =
+    searchParams?.get("client-name") ||
+    getWhapContextValue(whapContext, ["client-name", "client_name", "clientName"]);
+  const clientEmail =
+    searchParams?.get("client-email") ||
+    getWhapContextValue(whapContext, ["client-email", "client_email", "clientEmail"]);
   const metadata = {
     ...metadataFromQueryParams,
     ...(whapContext ? { whap_context: whapContext } : {}),
   };
   const prefillFormParams = useMemo(() => {
     return {
+      email: clientEmail,
       name:
+        clientName ||
         searchParams?.get("name") ||
         (firstNameQueryParam ? `${firstNameQueryParam} ${lastNameQueryParam}` : null),
       guests: (searchParams?.getAll("guests") || searchParams?.getAll("guest")) ?? [],
     };
-  }, [searchParams, firstNameQueryParam, lastNameQueryParam]);
+  }, [searchParams, firstNameQueryParam, lastNameQueryParam, clientName, clientEmail]);
 
   const bookerForm = useBookingForm({
     event: event.data,

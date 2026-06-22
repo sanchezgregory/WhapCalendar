@@ -358,43 +358,45 @@ const BookerComponent = ({
             `${customClassNames?.bookerContainer}`
           )}>
           <AnimatePresence>
-            <BookerSection
-              area="header"
-              className={classNames(
-                layout === BookerLayouts.MONTH_VIEW && "fixed top-4 z-10 ltr:right-4 rtl:left-4",
-                (layout === BookerLayouts.COLUMN_VIEW || layout === BookerLayouts.WEEK_VIEW) &&
-                  "bg-default dark:bg-cal-muted sticky top-0 z-10"
-              )}>
-              {isPlatform && layout === BookerLayouts.MONTH_VIEW ? (
-                <></>
-              ) : (
-                <Header
-                  isMyLink={Boolean(username === sessionUsername)}
-                  eventSlug={eventSlug}
-                  enabledLayouts={bookerLayouts.enabledLayouts}
-                  extraDays={layout === BookerLayouts.COLUMN_VIEW ? columnViewExtraDays.current : extraDays}
-                  isMobile={isMobile}
-                  nextSlots={nextSlots}
-                  renderOverlay={() => {
-                    if (isEmbed) return null;
-                    return (
-                      <OverlayCalendar
-                        isOverlayCalendarEnabled={isOverlayCalendarEnabled}
-                        connectedCalendars={connectedCalendars}
-                        overlayBusyDates={overlayBusyDates}
-                        onToggleCalendar={onToggleCalendar}
-                        hasSession={hasSession}
-                        handleClickContinue={onClickOverlayContinue}
-                        handleSwitchStateChange={onOverlaySwitchStateChange}
-                        handleClickNoCalendar={() => {
-                          onOverlayClickNoCalendar();
-                        }}
-                      />
-                    );
-                  }}
-                />
-              )}
-            </BookerSection>
+            {eventSlug !== "whap-session" && (
+              <BookerSection
+                area="header"
+                className={classNames(
+                  layout === BookerLayouts.MONTH_VIEW && "fixed top-4 z-10 ltr:right-4 rtl:left-4",
+                  (layout === BookerLayouts.COLUMN_VIEW || layout === BookerLayouts.WEEK_VIEW) &&
+                    "bg-default dark:bg-cal-muted sticky top-0 z-10"
+                )}>
+                {isPlatform && layout === BookerLayouts.MONTH_VIEW ? (
+                  <></>
+                ) : (
+                  <Header
+                    isMyLink={Boolean(username === sessionUsername)}
+                    eventSlug={eventSlug}
+                    enabledLayouts={bookerLayouts.enabledLayouts}
+                    extraDays={layout === BookerLayouts.COLUMN_VIEW ? columnViewExtraDays.current : extraDays}
+                    isMobile={isMobile}
+                    nextSlots={nextSlots}
+                    renderOverlay={() => {
+                      if (isEmbed) return null;
+                      return (
+                        <OverlayCalendar
+                          isOverlayCalendarEnabled={isOverlayCalendarEnabled}
+                          connectedCalendars={connectedCalendars}
+                          overlayBusyDates={overlayBusyDates}
+                          onToggleCalendar={onToggleCalendar}
+                          hasSession={hasSession}
+                          handleClickContinue={onClickOverlayContinue}
+                          handleSwitchStateChange={onOverlaySwitchStateChange}
+                          handleClickNoCalendar={() => {
+                            onOverlayClickNoCalendar();
+                          }}
+                        />
+                      );
+                    }}
+                  />
+                )}
+              </BookerSection>
+            )}
             <StickyOnDesktop key="meta" className={classNames("relative z-10 flex [grid-area:meta]")}>
               <BookerSection
                 area="meta"
