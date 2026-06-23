@@ -10,6 +10,7 @@ import { prisma } from "@calcom/prisma";
 
 const LOCAL_SHARED_SECRET = "local-whap-calendar-secret";
 const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+const WHAP_LOGIN_URL = process.env.NEXT_PUBLIC_WHAP_LOGIN_URL || "http://localhost:8001/login";
 
 const tokenPayloadSchema = z.object({
   whap_user_id: z.number(),
@@ -85,7 +86,7 @@ export async function GET(req: NextRequest) {
 
   if (!payload) {
     logger.warn("Whap SSO rejected invalid token");
-    return NextResponse.redirect(`${WEBAPP_URL}/auth/login`);
+    return NextResponse.redirect(WHAP_LOGIN_URL);
   }
 
   const user = await prisma.user.findUnique({
@@ -111,7 +112,7 @@ export async function GET(req: NextRequest) {
       whapUserId: payload.whap_user_id,
       email: payload.email,
     });
-    return NextResponse.redirect(`${WEBAPP_URL}/auth/login`);
+    return NextResponse.redirect(WHAP_LOGIN_URL);
   }
 
   if (!user.completedOnboarding || user.locale !== "es") {
