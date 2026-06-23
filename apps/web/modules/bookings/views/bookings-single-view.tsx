@@ -91,6 +91,8 @@ const querySchema = z.object({
   redirect_status: z.string().optional(),
 });
 
+const whapSessionSlugs = ["session-whap", "whap-session"];
+
 const useBrandColors = ({
   brandColor,
   darkBrandColor,
@@ -138,7 +140,8 @@ export default function Success(props: PageProps) {
 
   const isFeedbackMode = !!(noShow || rating);
   const isWhapSession =
-    eventTypeSlug === "whap-session" || ("slug" in eventType && eventType.slug === "whap-session");
+    (eventTypeSlug ? whapSessionSlugs.includes(eventTypeSlug) : false) ||
+    ("slug" in eventType && eventType.slug ? whapSessionSlugs.includes(eventType.slug) : false);
   const tz = props.tz ? props.tz : isSuccessBookingPage && attendeeTimeZone ? attendeeTimeZone : timeZone();
 
   const location = bookingInfo.location as ReturnType<typeof getEventLocationValue>;
@@ -843,8 +846,13 @@ export default function Success(props: PageProps) {
                           );
                         })}
                       </div>
+                      {isWhapSession && (
+                        <div className="border-subtle bg-subtle text-default mt-8 rounded-md border px-4 py-3 text-center text-sm">
+                          {t("whap_booking_complete_close_page")}
+                        </div>
+                      )}
                     </div>
-                    {requiresLoginToUpdate && (
+                    {requiresLoginToUpdate && !isWhapSession && (
                       <>
                         <hr className="border-subtle mb-8" />
                         <div className="text-center">
