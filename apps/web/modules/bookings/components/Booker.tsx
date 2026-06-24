@@ -239,6 +239,7 @@ const BookerComponent = ({
     : [];
 
   const slot = getQueryParam("slot");
+  const isWhapPublicBooking = eventSlug.startsWith("whap-") || eventSlug === "session-whap";
 
   useEffect(() => {
     setSelectedTimeslot(slot || null);
@@ -283,6 +284,7 @@ const BookerComponent = ({
         extraOptions={extraOptions}
         isVerificationCodeSending={isVerificationCodeSending}
         confirmButtonDisabled={confirmButtonDisabled}
+        termsAppName={isWhapPublicBooking ? "Whap.uy" : undefined}
         classNames={{
           confirmButton: customClassNames?.confirmStep?.confirmButton,
           backButton: customClassNames?.confirmStep?.backButton,
@@ -307,6 +309,7 @@ const BookerComponent = ({
     setSeatedEventData,
     setSelectedTimeslot,
     isPlatform,
+    isWhapPublicBooking,
     shouldRenderCaptcha,
     isVerificationCodeSending,
     unavailableTimeSlots,
@@ -358,7 +361,7 @@ const BookerComponent = ({
             `${customClassNames?.bookerContainer}`
           )}>
           <AnimatePresence>
-            {eventSlug !== "whap-session" && (
+            {!isWhapPublicBooking && (
               <BookerSection
                 area="header"
                 className={classNames(

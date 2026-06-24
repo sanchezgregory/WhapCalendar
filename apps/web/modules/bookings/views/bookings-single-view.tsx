@@ -91,7 +91,11 @@ const querySchema = z.object({
   redirect_status: z.string().optional(),
 });
 
-const whapSessionSlugs = ["session-whap", "whap-session"];
+const isWhapPublicBookingSlug = (slug?: string | null): boolean => {
+  if (!slug) return false;
+
+  return slug.startsWith("whap-") || slug === "session-whap";
+};
 
 const useBrandColors = ({
   brandColor,
@@ -139,9 +143,13 @@ export default function Success(props: PageProps) {
   const attendeeTimeZone = bookingInfo?.attendees.find((attendee) => attendee.email === email)?.timeZone;
 
   const isFeedbackMode = !!(noShow || rating);
-  const isWhapSession =
-    (eventTypeSlug ? whapSessionSlugs.includes(eventTypeSlug) : false) ||
-    ("slug" in eventType && eventType.slug ? whapSessionSlugs.includes(eventType.slug) : false);
+  let slugFromEventType: string | null = null;
+  if ("slug" in eventType) {
+    slugFromEventType = eventType.slug ?? null;
+  }
+
+  const isWhapPublicBooking =
+    isWhapPublicBookingSlug(eventTypeSlug) || isWhapPublicBookingSlug(slugFromEventType);
   const tz = props.tz ? props.tz : isSuccessBookingPage && attendeeTimeZone ? attendeeTimeZone : timeZone();
 
   const location = bookingInfo.location as ReturnType<typeof getEventLocationValue>;
@@ -481,7 +489,7 @@ export default function Success(props: PageProps) {
           status={status}
         />
       )}
-      {isLoggedIn && !isEmbed && !isFeedbackMode && !isWhapSession && (
+      {isLoggedIn && !isEmbed && !isFeedbackMode && !isWhapPublicBooking && (
         <div className="-mb-4 ml-4 mt-2">
           <Link
             href={allRemainingBookings ? "/bookings/recurring" : "/bookings/upcoming"}
@@ -846,13 +854,13 @@ export default function Success(props: PageProps) {
                           );
                         })}
                       </div>
-                      {isWhapSession && (
+                      {isWhapPublicBooking && (
                         <div className="border-subtle bg-subtle text-default mt-8 rounded-md border px-4 py-3 text-center text-sm">
                           {t("whap_booking_complete_close_page")}
                         </div>
                       )}
                     </div>
-                    {requiresLoginToUpdate && !isWhapSession && (
+                    {requiresLoginToUpdate && !isWhapPublicBooking && (
                       <>
                         <hr className="border-subtle mb-8" />
                         <div className="text-center">
@@ -878,7 +886,7 @@ export default function Success(props: PageProps) {
                       isReschedulable &&
                       !isRerouting &&
                       canCancelOrReschedule &&
-                      !isWhapSession &&
+                      !isWhapPublicBooking &&
                       (!isCancellationMode ? (
                         <>
                           {/* Only show section if there's at least one actionable option */}
@@ -976,7 +984,7 @@ export default function Success(props: PageProps) {
                       !isCancellationMode &&
                       isReschedulable &&
                       !!calculatedDuration &&
-                      !isWhapSession && (
+                      !isWhapPublicBooking && (
                       <>
                         <hr className="border-subtle mt-8" />
                         <div className="text-default align-center flex flex-row justify-center pt-8">
@@ -1050,7 +1058,7 @@ export default function Success(props: PageProps) {
                       </>
                     )}
 
-                    {session === null && !(userIsOwner || props.hideBranding) && (
+                    {session === null && !(userIsOwner || props.hideBranding || isWhapPublicBooking) && (
                       <>
                         <hr className="border-subtle mt-8" />
                         <div className="text-default pt-8 text-center text-xs">
