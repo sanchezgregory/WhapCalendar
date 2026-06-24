@@ -14,11 +14,13 @@ Usage:
 
 Commands:
   up       Start web + API dev services with hot reload (default)
+  start    Start web + API dev services in the background
   deps     Reinstall dependencies into the Docker node_modules volume
   reset    Remove dev volumes and start from a clean state
   down     Stop dev services
   logs     Follow web + API dev logs
   ps       Show dev service status
+  status   Show service status and local HTTP checks
   help     Show this help
 EOF
 }
@@ -46,13 +48,39 @@ compose() {
   docker compose -f "$COMPOSE_FILE" "$@"
 }
 
+check_url() {
+  local url="$1"
+  local label="$2"
+
+  if ! command -v curl >/dev/null 2>&1; then
+    echo "$label: curl is not available"
+    return 0
+  fi
+
+  if curl -fsS -o /dev/null -I --max-time 5 "$url"; then
+    echo "$label: OK ($url)"
+  else
+    echo "$label: not ready ($url)"
+  fi
+}
+
 command_name="${1:-up}"
 
 case "$command_name" in
   up)
     require_docker
     require_env
+    echo "Starting WhapCalendar dev services in the foreground."
+    echo "First run can take a while while calcom-deps installs dependencies."
     compose up "${DEV_SERVICES[@]}"
+    ;;
+  start)
+    require_docker
+    require_env
+    echo "Starting WhapCalendar dev services in the background."
+    echo "First run can take a while while calcom-deps installs dependencies."
+    compose up -d "${DEV_SERVICES[@]}"
+    compose ps
     ;;
   deps)
     require_docker
@@ -76,6 +104,13 @@ case "$command_name" in
   ps)
     require_docker
     compose ps
+    ;;
+  status)
+    require_docker
+    compose ps
+    echo
+    check_url "http://localhost:3000" "Web"
+    check_url "http://localhost:${API_PORT:-5555}/api/v2" "API v2"
     ;;
   help|-h|--help)
     usage

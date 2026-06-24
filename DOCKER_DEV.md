@@ -12,9 +12,9 @@ This is the recommended local flow for WhapCalendar (`wc`) development.
 This starts Postgres, Redis, installs dependencies into a named Docker volume, then runs:
 
 - Web app: `yarn dev` on `http://localhost:3000`
-- API v2: `yarn workspace @calcom/api-v2 dev:no-docker:watch` on `${API_PORT:-5555}`
+- API v2: `yarn workspace @calcom/api-v2 dev:no-docker` on `${API_PORT:-5555}`
 
-The API dev command keeps Nest in watch mode and also watches the platform packages used by API v2.
+The API dev command keeps Nest in watch mode for API v2 source changes.
 
 ## Daily Use
 
@@ -46,11 +46,13 @@ If dependencies or caches get corrupted:
 
 ```bash
 ./wc-dev.sh up      # Start web + API dev services with hot reload
+./wc-dev.sh start   # Start web + API dev services in the background
 ./wc-dev.sh deps    # Reinstall dependencies into the Docker node_modules volume
 ./wc-dev.sh reset   # Remove dev volumes and start from a clean state
 ./wc-dev.sh down    # Stop dev services
 ./wc-dev.sh logs    # Follow web + API dev logs
 ./wc-dev.sh ps      # Show dev service status
+./wc-dev.sh status  # Show service status and local HTTP checks
 ```
 
 Use the original `docker-compose.yml` for production-like image builds only.

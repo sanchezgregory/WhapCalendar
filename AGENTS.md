@@ -98,11 +98,13 @@ Use the WC dev script for local Docker development with hot reload instead of re
 
 ```bash
 ./wc-dev.sh          # Start web + API dev services with hot reload
+./wc-dev.sh start    # Start web + API dev services in the background
 ./wc-dev.sh deps     # Reinstall dependencies into the Docker node_modules volume
 ./wc-dev.sh reset    # Remove dev volumes and start from a clean state
 ./wc-dev.sh down     # Stop dev services
 ./wc-dev.sh logs     # Follow web + API dev logs
 ./wc-dev.sh ps       # Show dev service status
+./wc-dev.sh status   # Show service status and local HTTP checks
 ```
 
 Use `docker-compose.yml` and production image builds only for production-like validation, not normal local development.
