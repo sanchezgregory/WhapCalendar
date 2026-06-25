@@ -20,12 +20,14 @@ type Props = {
   eventType: EventTypeSetupProps["eventType"];
   team: EventTypeSetupProps["team"];
   eventTypeApps?: EventTypeApps;
+  hideAppsTab?: boolean;
 };
 export const useTabsNavigations = ({
   formMethods,
   eventType,
   team,
   eventTypeApps,
+  hideAppsTab = false,
 }: Props) => {
   const { t } = useLocale();
 
@@ -71,6 +73,7 @@ export const useTabsNavigations = ({
       enabledAppsNumber,
       installedAppsNumber,
       availability,
+      hideAppsTab,
     });
 
     if (!requirePayment) {
@@ -149,6 +152,7 @@ export const useTabsNavigations = ({
     activeWebhooksNumber,
     eventType.id,
     formMethods,
+    hideAppsTab,
   ]);
 
   return { tabsNavigation: EventTypeTabs };
@@ -162,6 +166,7 @@ type getNavigationProps = {
   enabledAppsNumber: number;
   installedAppsNumber: number;
   availability: AvailabilityOption | undefined;
+  hideAppsTab?: boolean;
 };
 
 function getNavigation({
@@ -171,6 +176,7 @@ function getNavigation({
   t,
   enabledAppsNumber,
   installedAppsNumber,
+  hideAppsTab = false,
 }: getNavigationProps) {
   const duration = multipleDuration?.map((duration) => ` ${duration}`) || length;
 
@@ -196,14 +202,17 @@ function getNavigation({
       info: t(`event_advanced_tab_description`),
       "data-testid": "event_advanced_tab_title",
     },
-    {
+  ];
+
+  if (!hideAppsTab) {
+    baseNavigation.push({
       name: t("apps"),
       href: `/event-types/${id}?tabName=apps`,
       icon: "grid-3x3",
       info: `${t("number_apps", { count: installedAppsNumber })}, ${enabledAppsNumber} ${t("active")}`,
       "data-testid": "apps",
-    },
-  ];
+    });
+  }
 
   return baseNavigation;
 }

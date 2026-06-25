@@ -1,4 +1,5 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
+import { prisma } from "@calcom/prisma";
 import { eventTypesRouter } from "@calcom/trpc/server/routers/viewer/eventTypes/_router";
 import { EventTypeWebWrapper } from "@calcom/web/modules/event-types/components/EventTypeWebWrapper";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
@@ -18,6 +19,10 @@ const querySchema = z.object({
     })
     .transform((val) => Number(val)),
 });
+
+function hasWhapMetadata(metadata: unknown): boolean {
+  return Boolean(metadata && typeof metadata === "object" && !Array.isArray(metadata) && "whap" in metadata);
+}
 
 export const generateMetadata = async () => {
   return await _generateMetadata(
@@ -57,12 +62,24 @@ const ServerPage = async ({ params }: PageProps) => {
     throw new Error("This event type does not exist");
   }
 
+  const whapUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { metadata: true },
+  });
+
   // Fetch permissions for the event type's team
   const permissions = {
     eventTypes: { canRead: true, canCreate: true, canUpdate: true, canDelete: true },
   };
 
-  return <EventTypeWebWrapper data={data} id={eventTypeId} permissions={permissions} />;
+  return (
+    <EventTypeWebWrapper
+      data={data}
+      id={eventTypeId}
+      permissions={permissions}
+      isWhapMediator={hasWhapMetadata(whapUser?.metadata)}
+    />
+  );
 };
 
 export default ServerPage;

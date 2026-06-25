@@ -120,6 +120,19 @@ git status --short
 
 Also inspect `.env`, `.env.example`, Docker Compose files, exposed ports, internal hostnames, app logs, API routes, webhook handlers, queues, and database connection settings.
 
+### Local App Store Visibility
+
+WC controls App Store visibility with the `App.enabled` column. When Greg asks to show only specific apps locally, update the local Docker Postgres DB by setting `enabled` from an allowlist of app slugs.
+
+Default Whap local allowlist is Google Calendar and Google Meet:
+
+```bash
+docker compose -f docker-compose.dev.yml exec -T database psql -U unicorn_user -d calendso -c "UPDATE \"App\" SET \"enabled\" = slug IN ('google-calendar', 'google-meet');"
+docker compose -f docker-compose.dev.yml exec -T database psql -U unicorn_user -d calendso -c "SELECT slug, \"dirName\", \"enabled\" FROM \"App\" WHERE \"enabled\" = true ORDER BY slug;"
+```
+
+To activate another app, add its `slug` to the `IN (...)` allowlist. Use `slug`, not `dirName`; examples: Google Calendar is `google-calendar`, Google Meet is `google-meet`.
+
 ## Integration Debugging Checklist
 
 When debugging a synchronization issue, determine:
