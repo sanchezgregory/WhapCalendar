@@ -183,7 +183,7 @@ async function consumeInvitationAfterSuccessfulSignup(response: NextResponse, in
 
   await consumeWhapCalendarInvitation({
     token: invitation.token,
-    calDiyUserId: String(user.id),
+    whapCalendarUserId: String(user.id),
     email: invitation.email,
   });
 }

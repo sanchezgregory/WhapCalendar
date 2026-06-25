@@ -1,11 +1,11 @@
 # Whap Webhook Integration
 
-Whap receives Cal.diy booking webhooks at these endpoints:
+Whap receives WhapCalendar booking webhooks at these endpoints:
 
-- Development: `https://dev.whap.uy/api/webhooks/cal-diy`
-- Production: `https://whap.uy/api/webhooks/cal-diy`
+- Development: `https://dev.whap.uy/api/webhooks/whapcalendar`
+- Production: `https://whap.uy/api/webhooks/whapcalendar`
 
-Use the existing Cal.diy webhook system. Configure the same shared secret in Cal.diy's webhook `secret` field and in Whap as `CAL_DIY_WEBHOOK_SECRET`.
+Use the existing WhapCalendar webhook system. Configure the same shared secret in WhapCalendar's webhook `secret` field and in Whap as `WHAPCALENDAR_WEBHOOK_SECRET`.
 
 ## Triggers
 
@@ -28,10 +28,10 @@ Development body:
 
 ```json
 {
-  "subscriberUrl": "https://dev.whap.uy/api/webhooks/cal-diy",
+  "subscriberUrl": "https://dev.whap.uy/api/webhooks/whapcalendar",
   "active": true,
   "triggers": ["BOOKING_CREATED", "BOOKING_RESCHEDULED", "BOOKING_CANCELLED"],
-  "secret": "<CAL_DIY_WEBHOOK_SECRET>"
+  "secret": "<WHAPCALENDAR_WEBHOOK_SECRET>"
 }
 ```
 
@@ -39,10 +39,10 @@ Production body:
 
 ```json
 {
-  "subscriberUrl": "https://whap.uy/api/webhooks/cal-diy",
+  "subscriberUrl": "https://whap.uy/api/webhooks/whapcalendar",
   "active": true,
   "triggers": ["BOOKING_CREATED", "BOOKING_RESCHEDULED", "BOOKING_CANCELLED"],
-  "secret": "<CAL_DIY_WEBHOOK_SECRET>"
+  "secret": "<WHAPCALENDAR_WEBHOOK_SECRET>"
 }
 ```
 
@@ -59,23 +59,23 @@ Use the same body shape as the user webhook.
 
 ## Signature Verification
 
-Cal.diy signs the exact request body with HMAC SHA-256 and sends the hex digest in:
+WhapCalendar signs the exact request body with HMAC SHA-256 and sends the hex digest in:
 
 ```http
 X-Cal-Signature-256: <signature>
 ```
 
-Whap should validate this header using `CAL_DIY_WEBHOOK_SECRET` before processing the payload.
+Whap should validate this header using `WHAPCALENDAR_WEBHOOK_SECRET` before processing the payload.
 
 ## Passing Whap Context
 
-Whap can open the Cal.diy booking page or iframe with a signed opaque context token:
+Whap can open the WhapCalendar booking page or iframe with a signed opaque context token:
 
 ```text
 ?whap_context=<signed-token>
 ```
 
-Cal.diy stores this value as booking metadata:
+WhapCalendar stores this value as booking metadata:
 
 ```json
 {
@@ -105,4 +105,4 @@ Booking webhooks include the context in `payload.metadata.whap_context`, for exa
 }
 ```
 
-Whap should decode the token after validating the Cal.diy webhook signature and use it to associate the booking with Whap entities such as `mediator_id`, `case_id`, `request_id`, or `session_id`.
+Whap should decode the token after validating the WhapCalendar webhook signature and use it to associate the booking with Whap entities such as `mediator_id`, `case_id`, `request_id`, or `session_id`.

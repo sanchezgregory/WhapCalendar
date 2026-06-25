@@ -11,7 +11,7 @@ type VerifyInvitationResponse = {
 
 type ConsumeInvitationParams = {
   token: string;
-  calDiyUserId: string;
+  whapCalendarUserId: string;
   email: string;
 };
 
@@ -36,8 +36,8 @@ function isLocalUrl(url: string | undefined) {
 }
 
 function getSharedSecret() {
-  if (process.env.WHAP_CALDIY_SHARED_SECRET) {
-    return process.env.WHAP_CALDIY_SHARED_SECRET;
+  if (process.env.WHAPCALENDAR_WEBHOOK_SECRET) {
+    return process.env.WHAPCALENDAR_WEBHOOK_SECRET;
   }
 
   if (isLocalUrl(process.env.WHAP_API_BASE_URL) || isLocalUrl(process.env.NEXT_PUBLIC_WEBAPP_URL)) {
@@ -51,7 +51,7 @@ async function requestWhap(path: string, body: Record<string, unknown>) {
   const secret = getSharedSecret();
 
   if (!secret) {
-    throw new Error("WHAP_CALDIY_SHARED_SECRET is not configured");
+    throw new Error("WHAPCALENDAR_WEBHOOK_SECRET is not configured");
   }
 
   return fetch(`${getWhapApiBaseUrl()}${path}`, {
@@ -75,10 +75,10 @@ export async function verifyWhapCalendarInvitation(token: string): Promise<Verif
   return (await response.json()) as VerifyInvitationResponse;
 }
 
-export async function consumeWhapCalendarInvitation({ token, calDiyUserId, email }: ConsumeInvitationParams) {
+export async function consumeWhapCalendarInvitation({ token, whapCalendarUserId, email }: ConsumeInvitationParams) {
   const response = await requestWhap("/calendar-invitations/consume", {
     token,
-    cal_diy_user_id: calDiyUserId,
+    whapcalendar_user_id: whapCalendarUserId,
     email,
   });
 

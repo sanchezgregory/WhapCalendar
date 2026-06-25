@@ -7,7 +7,11 @@ import { prisma } from "@calcom/prisma";
 import { CreationSource, IdentityProvider, UserPermissionRole, WebhookTriggerEvents } from "@calcom/prisma/enums";
 
 const LOCAL_SHARED_SECRET = "local-whap-calendar-secret";
-const WHAP_WEBHOOK_TRIGGERS = [WebhookTriggerEvents.BOOKING_CREATED, WebhookTriggerEvents.BOOKING_RESCHEDULED];
+const WHAP_WEBHOOK_TRIGGERS = [
+  WebhookTriggerEvents.BOOKING_CREATED,
+  WebhookTriggerEvents.BOOKING_RESCHEDULED,
+  WebhookTriggerEvents.BOOKING_CANCELLED,
+];
 
 const provisionSchema = z.object({
   whap_user_id: z.number(),
@@ -30,7 +34,7 @@ function isLocalUrl(url: string | undefined) {
 }
 
 function getSharedSecret() {
-  if (process.env.WHAP_CALDIY_SHARED_SECRET) return process.env.WHAP_CALDIY_SHARED_SECRET;
+  if (process.env.WHAPCALENDAR_WEBHOOK_SECRET) return process.env.WHAPCALENDAR_WEBHOOK_SECRET;
   if (isLocalUrl(process.env.WHAP_API_BASE_URL) || isLocalUrl(process.env.NEXT_PUBLIC_WEBAPP_URL)) {
     return LOCAL_SHARED_SECRET;
   }
@@ -39,7 +43,7 @@ function getSharedSecret() {
 }
 
 function getWhapWebhookUrl() {
-  return `${(process.env.WHAP_API_BASE_URL || "http://host.docker.internal:8001/api").replace(/\/$/, "")}/webhooks/cal-diy`;
+  return `${(process.env.WHAP_API_BASE_URL || "http://host.docker.internal:8001/api").replace(/\/$/, "")}/webhooks/whapcalendar`;
 }
 
 function hasValidSecret(req: NextRequest) {
@@ -187,7 +191,7 @@ export async function POST(req: NextRequest) {
 
   const responseBody = {
     ok: true,
-    cal_diy_user_id: String(user.id),
+    whapcalendar_user_id: String(user.id),
     email: user.email,
     username: user.username,
     role: user.role,
