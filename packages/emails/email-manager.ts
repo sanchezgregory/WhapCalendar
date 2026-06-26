@@ -80,6 +80,10 @@ export const isWhapPublicBookingSlug = (slug?: string | null): boolean => {
   return slug.startsWith("whap-") || slug === "session-whap";
 };
 
+export const shouldSuppressWhapStandardNotifications = (slug?: string | null): boolean => {
+  return isWhapPublicBookingSlug(slug);
+};
+
 const _sendScheduledEmailsAndSMS = async (
   calEvent: CalendarEvent,
   eventNameObject?: EventNameObjectType,
@@ -294,6 +298,9 @@ const _sendRescheduledEmailsAndSMS = async (
   eventTypeMetadata?: EventTypeMetadata
 ) => {
   const calendarEvent = formatCalEvent(calEvent);
+
+  if (shouldSuppressWhapStandardNotifications(calendarEvent.type)) return;
+
   const emailsToSend: Promise<unknown>[] = [];
   const organizationSettings = await fetchOrganizationEmailSettings(calEvent.organizationId);
 
@@ -341,6 +348,8 @@ export const sendRescheduledSeatEmailAndSMS = async (
   eventTypeMetadata?: EventTypeMetadata
 ) => {
   const calendarEvent = formatCalEvent(calEvent);
+
+  if (shouldSuppressWhapStandardNotifications(calendarEvent.type)) return;
 
   const clonedCalEvent = cloneDeep(calendarEvent);
   const emailsToSend: Promise<unknown>[] = [];
@@ -425,6 +434,9 @@ export const sendCancelledSeatEmailsAndSMS = async (
   eventTypeMetadata?: EventTypeMetadata
 ) => {
   const formattedCalEvent = formatCalEvent(calEvent);
+
+  if (shouldSuppressWhapStandardNotifications(formattedCalEvent.type)) return;
+
   const clonedCalEvent = cloneDeep(formattedCalEvent);
   const emailsToSend: Promise<unknown>[] = [];
   const organizationSettings = await fetchOrganizationEmailSettings(calEvent.organizationId);
@@ -515,6 +527,9 @@ export const sendCancelledEmailsAndSMS = async (
   eventTypeMetadata?: EventTypeMetadata
 ) => {
   const calendarEvent = formatCalEvent(calEvent);
+
+  if (shouldSuppressWhapStandardNotifications(calendarEvent.type)) return;
+
   const emailsToSend: Promise<unknown>[] = [];
   const calEventLength = calendarEvent.length;
   const eventDuration = dayjs(calEvent.endTime).diff(calEvent.startTime, "minutes");
