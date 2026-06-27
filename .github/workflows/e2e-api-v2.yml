@@ -73,7 +73,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           sparse-checkout: .github
       - uses: ./.github/actions/cache-checkout
@@ -99,7 +99,7 @@ jobs:
 
       - name: Upload Test Results
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-api-v2-shard-${{ matrix.shard }}
           path: apps/api/v2/test-results

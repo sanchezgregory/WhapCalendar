@@ -33,7 +33,7 @@ jobs:
     steps:
       - name: Get PR and run info
         id: get-info
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const isDispatch = context.eventName === 'workflow_dispatch';

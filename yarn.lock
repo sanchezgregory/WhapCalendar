@@ -2105,7 +2105,7 @@ __metadata:
     "@tailwindcss/postcss": "npm:4.1.15"
     "@tanstack/react-query": "npm:5.17.19"
     "@types/jest": "npm:29.5.12"
-    "@types/node": "npm:20.17.23"
+    "@types/node": "npm:24.13.2"
     "@types/react": "npm:18.0.26"
     "@types/react-dom": "npm:18.2.6"
     "@vitejs/plugin-react": "npm:5.1.2"
@@ -2153,7 +2153,7 @@ __metadata:
     "@playwright/test": "npm:1.57.0"
     "@prisma/client": "npm:6.16.1"
     "@tailwindcss/postcss": "npm:4.1.15"
-    "@types/node": "npm:20.17.23"
+    "@types/node": "npm:24.13.2"
     "@types/react": "npm:18.0.26"
     "@types/react-dom": "npm:18.2.6"
     dotenv: "npm:17.2.2"
@@ -2406,7 +2406,7 @@ __metadata:
   dependencies:
     "@calcom/atoms": "workspace:*"
     "@prisma/client": "npm:6.16.1"
-    "@types/node": "npm:20.17.23"
+    "@types/node": "npm:24.13.2"
     "@types/react": "npm:18.0.26"
     "@types/react-dom": "npm:18.2.6"
     autoprefixer: "npm:10.4.19"
@@ -2908,7 +2908,7 @@ __metadata:
     "@calcom/features": "workspace:*"
     "@calcom/i18n": "workspace:*"
     "@calcom/lib": "workspace:*"
-    "@types/node": "npm:20.17.23"
+    "@types/node": "npm:24.13.2"
     "@vitejs/plugin-react": "npm:5.1.2"
     typescript: "npm:5.9.3"
     vite: "npm:6.4.2"
@@ -3200,7 +3200,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@calcom/types@workspace:packages/types"
   dependencies:
-    "@types/node": "npm:20.17.23"
+    "@types/node": "npm:24.13.2"
   languageName: unknown
   linkType: soft
 
@@ -17126,12 +17126,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.17.23":
-  version: 20.17.23
-  resolution: "@types/node@npm:20.17.23"
+"@types/node@npm:^24.13.2":
+  version: 24.13.2
+  resolution: "@types/node@npm:24.13.2"
   dependencies:
-    undici-types: "npm:~6.19.2"
-  checksum: 10/162fee54e25b464de91da1c0744f421c0d6301925893f5d8e48effeae321d343c87fa7f8eefc53384bf86cae3974bb1740830d4b62754383b18f2d3dff4e1fe9
+    undici-types: "npm:~7.18.0"
+  checksum: 10/2b8cb95ada191ecc788fef91d7cdb86dff24f6895b510e1fb495cc001832709fa8fc3e1eeb27d64bda52b3f74f9e91acf42431e98e3e6876de1e53acce7f7602
   languageName: node
   linkType: hard
 
@@ -40748,10 +40748,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"undici-types@npm:~6.19.2":
-  version: 6.19.8
-  resolution: "undici-types@npm:6.19.8"
-  checksum: 10/cf0b48ed4fc99baf56584afa91aaffa5010c268b8842f62e02f752df209e3dea138b372a60a963b3b2576ed932f32329ce7ddb9cb5f27a6c83040d8cd74b7a70
+"undici-types@npm:~7.18.0":
+  version: 7.18.0
+  resolution: "undici-types@npm:7.18.0"
+  checksum: 10/d26b644fd7643fb911c37db26dc8b83268f847966c7ff05dc96ba3f5feb8de885022023bcfb393736bac5ce224ef123846739d1b9b051b1c3ad2e18b76911e65
   languageName: node
   linkType: hard
 

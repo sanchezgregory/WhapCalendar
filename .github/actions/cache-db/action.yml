@@ -17,7 +17,7 @@ runs:
         path: ${{ inputs.path }}
     - name: Cache database
       id: cache-db
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       env:
         DATABASE_URL: ${{ inputs.DATABASE_URL }}
         DATABASE_DIRECT_URL: ${{ inputs.DATABASE_URL }}

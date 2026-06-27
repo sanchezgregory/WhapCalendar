@@ -33,7 +33,7 @@ jobs:
     steps:
       - name: Check if PR is trusted
         id: check-trust
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const trustedAssociations = ['OWNER', 'MEMBER', 'COLLABORATOR'];
@@ -173,7 +173,7 @@ jobs:
       run-e2e: ${{ steps.check-if-pr-has-label.outputs.run-e2e == 'true' }}
       db-cache-hit: ${{ steps.cache-db-check.outputs.cache-hit }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           sparse-checkout: .github
       - uses: ./.github/actions/cache-checkout
@@ -182,7 +182,7 @@ jobs:
         uses: ./.github/actions/cache-db-key
       - name: Check DB cache (lookup-only)
         id: cache-db-check
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: backups/backup.sql
           key: ${{ steps.cache-db-key.outputs.key }}
@@ -226,7 +226,7 @@ jobs:
           echo "commit-sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
       - name: Check if PR exists with ready-for-e2e label for this SHA
         id: check-if-pr-has-label
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             let labels = [];

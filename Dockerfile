@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-FROM --platform=$BUILDPLATFORM node:20 AS builder
+FROM --platform=$BUILDPLATFORM node:24 AS builder
 
 WORKDIR /calcom
 
@@ -58,7 +58,7 @@ RUN --mount=type=cache,target=/calcom/apps/web/.next/cache \
   yarn --cwd apps/web workspace @calcom/web run build
 RUN rm -rf node_modules/.cache .yarn/cache
 
-FROM node:20 AS builder-two
+FROM node:24 AS builder-two
 
 WORKDIR /calcom
 ARG NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000

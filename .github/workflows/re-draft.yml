@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 'Download artifact'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
@@ -45,7 +45,7 @@ jobs:
         run: unzip context.zip
 
       - name: 'Return Parsed JSON'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         id: return-parsed-json
         with:
           script: |
@@ -68,7 +68,7 @@ jobs:
     steps:
       - run: echo "This PR was rejected"
       - name: Convert PR to draft when changes are requested
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             async function getPullRequestId() {
