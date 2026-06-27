@@ -1,0 +1,124 @@
+volumes:
+  wc-database-data:
+    name: ${WC_CONTAINER_PREFIX}-database-data
+  wc-redis-data:
+    name: ${WC_CONTAINER_PREFIX}-redis-data
+
+networks:
+  wc-stack:
+    name: ${WC_CONTAINER_PREFIX}-stack
+
+services:
+  database:
+    container_name: ${WC_CONTAINER_PREFIX}-database
+    image: postgres
+    restart: always
+    volumes:
+      - wc-database-data:/var/lib/postgresql
+    ports:
+      - "${WC_DB_BIND_HOST:-127.0.0.1}:${WC_DB_PORT}:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    networks:
+      - wc-stack
+
+  redis:
+    container_name: ${WC_CONTAINER_PREFIX}-redis
+    image: redis:latest
+    restart: always
+    volumes:
+      - wc-redis-data:/data
+    networks:
+      - wc-stack
+
+  calcom:
+    container_name: ${WC_CONTAINER_PREFIX}-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_WEBAPP_URL: ${NEXT_PUBLIC_WEBAPP_URL}
+        NEXT_PUBLIC_API_V2_URL: ${NEXT_PUBLIC_API_V2_URL}
+        NEXT_PUBLIC_WHAP_LOGIN_URL: ${NEXT_PUBLIC_WHAP_LOGIN_URL}
+        NEXT_PUBLIC_WHAP_PROFILE_URL: ${NEXT_PUBLIC_WHAP_PROFILE_URL}
+        NEXT_PUBLIC_LICENSE_CONSENT: ${NEXT_PUBLIC_LICENSE_CONSENT}
+        NEXT_PUBLIC_WEBSITE_TERMS_URL: ${NEXT_PUBLIC_WEBSITE_TERMS_URL}
+        NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL: ${NEXT_PUBLIC_WEBSITE_PRIVACY_POLICY_URL}
+        NEXT_PUBLIC_SINGLE_ORG_SLUG: ${NEXT_PUBLIC_SINGLE_ORG_SLUG}
+        ORGANIZATIONS_ENABLED: ${ORGANIZATIONS_ENABLED}
+        CALCOM_TELEMETRY_DISABLED: ${CALCOM_TELEMETRY_DISABLED}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+        CALENDSO_ENCRYPTION_KEY: ${CALENDSO_ENCRYPTION_KEY}
+        DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+        CSP_POLICY: ${CSP_POLICY}
+    restart: always
+    ports:
+      - "${WC_WEB_BIND_HOST:-0.0.0.0}:${WC_WEB_PORT}:3000"
+    env_file: ${WC_ENV_FILE}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+      - DATABASE_DIRECT_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+      - DATABASE_READ_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+      - DATABASE_WRITE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - database
+      - redis
+    networks:
+      - wc-stack
+
+  calcom-api:
+    container_name: ${WC_CONTAINER_PREFIX}-api
+    build:
+      context: .
+      dockerfile: apps/api/v2/Dockerfile
+      args:
+        DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+        DATABASE_DIRECT_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+    restart: always
+    ports:
+      - "${WC_API_BIND_HOST:-127.0.0.1}:${WC_API_PORT}:80"
+    env_file: ${WC_ENV_FILE}
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - API_PORT=80
+      - API_URL=${API_URL}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+      - DATABASE_READ_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+      - DATABASE_WRITE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+      - DATABASE_DIRECT_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database/${POSTGRES_DB}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=${LOG_LEVEL}
+      - API_KEY_PREFIX=${API_KEY_PREFIX}
+      - WEB_APP_URL=${WEB_APP_URL}
+      - IS_E2E=${IS_E2E:-false}
+      - REWRITE_API_V2_PREFIX=${REWRITE_API_V2_PREFIX:-true}
+      - CALCOM_LICENSE_KEY=${CALCOM_LICENSE_KEY}
+      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=${NEXT_PUBLIC_VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - STRIPE_API_KEY=${STRIPE_API_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - STRIPE_PRICE_ID_STARTER=${STRIPE_PRICE_ID_STARTER}
+      - STRIPE_PRICE_ID_STARTER_OVERAGE=${STRIPE_PRICE_ID_STARTER_OVERAGE}
+      - STRIPE_PRICE_ID_ESSENTIALS=${STRIPE_PRICE_ID_ESSENTIALS}
+      - STRIPE_PRICE_ID_ESSENTIALS_OVERAGE=${STRIPE_PRICE_ID_ESSENTIALS_OVERAGE}
+      - STRIPE_PRICE_ID_ENTERPRISE=${STRIPE_PRICE_ID_ENTERPRISE}
+      - STRIPE_PRICE_ID_ENTERPRISE_OVERAGE=${STRIPE_PRICE_ID_ENTERPRISE_OVERAGE}
+      - STRIPE_TEAM_MONTHLY_PRICE_ID=${STRIPE_TEAM_MONTHLY_PRICE_ID}
+      - IS_TEAM_BILLING_ENABLED=${IS_TEAM_BILLING_ENABLED:-false}
+      - AXIOM_DATASET=${AXIOM_DATASET}
+      - AXIOM_TOKEN=${AXIOM_TOKEN}
+      - LOGGER_BRIDGE_LOG_LEVEL=${LOGGER_BRIDGE_LOG_LEVEL}
+      - DOCS_URL=${DOCS_URL}
+      - GET_LICENSE_KEY_URL=${GET_LICENSE_KEY_URL}
+    depends_on:
+      - database
+      - redis
+    networks:
+      - wc-stack
