@@ -1,6 +1,154 @@
-# Cal.diy Development Guide for AI Agents
+# WhapCalendar Development Guide for AI Agents
 
-You are a senior Cal.diy engineer working in a Yarn/Turbo monorepo. You prioritize type safety, security, and small, reviewable diffs.
+WhapCalendar (`WC`) is Greg's fork/customization of Cal.diy for WhapProject (`WP`). You are a senior Cal.diy engineer working in a Yarn/Turbo monorepo, but every change must also respect the Whap ↔ WhapCalendar integration boundary. You prioritize type safety, security, reliable synchronization, and small, reviewable diffs.
+
+## WhapProject Relationship
+
+This repository is one half of a two-application system:
+
+- **WhapProject (`WP`)**: Laravel, Inertia, React, TypeScript, Vite, PNPM. Local path: `/Users/gregorysanchez/projects/WhapProject`. Local URL: `http://localhost:8001/`. Production URL: `https://whap.uy`.
+- **WhapCalendar (`WC`)**: Next.js, React, TypeScript, Prisma, tRPC, Nest API v2, Yarn, Turbo. Local path: `/Users/gregorysanchez/projects/WhapCalendar`. Local URL: `http://localhost:3000/`. VPS URL: `https://whap.uy:8443`.
+
+Whap and WhapCalendar are independent applications. Do not assume they share containers, databases, environment files, Docker networks, ports, queues, cache, migrations, or runtime commands.
+
+The current product goal is to keep Whap and WhapCalendar synchronized through explicit APIs, webhooks, jobs, events, and services. Never couple the applications through shared database access.
+
+## Task Classification
+
+Before making changes, classify the task as one of:
+
+- `WhapCalendar-only`
+- `Whap-only`
+- `Whap ↔ WhapCalendar integration`
+- `Infrastructure / VPS / Docker`
+- `Local development setup`
+
+For integration tasks, inspect both sides of the flow before assuming the bug or feature belongs only to WC. Use `../WhapProject/AGENTS.md` as the authoritative guide for WhapProject-specific commands, VPS rules, Laravel conventions, and WP safety constraints.
+
+## Project Separation Rules
+
+- Do not run Laravel, Artisan, Composer, PNPM, or Whap Sail-style commands inside WhapCalendar.
+- Do not run WhapCalendar / Next.js / Yarn / Turbo commands inside WhapProject unless explicitly working there.
+- Do not run Whap migrations against the WhapCalendar database.
+- Do not share Whap database credentials with WhapCalendar unless Greg explicitly approves a specific integration reason.
+- Do not assume one project can reach the other by Docker service name unless verified with Compose config and runtime networking.
+- Prefer environment-configured URLs over hardcoded local or VPS URLs.
+
+## Environment Map
+
+### Local
+
+- Whap: `http://localhost:8001/`
+- WhapCalendar: `http://localhost:3000/`
+- WhapCalendar should call Whap using `WHAP_API_BASE_URL`, currently expected locally as `http://host.docker.internal:8001/api` when WC runs in Docker.
+- Browser-visible Whap links use `NEXT_PUBLIC_WHAP_LOGIN_URL`, `NEXT_PUBLIC_WHAP_PROFILE_URL`, and related `NEXT_PUBLIC_*` values.
+
+### VPS / Non-local
+
+- Whap: `https://whap.uy`
+- WhapCalendar: `https://whap.uy:8443`
+- Verify the WC VPS project path before running commands; do not assume it is the old calendar app path.
+- Use HTTPS URLs on VPS and never point VPS integration traffic at local URLs.
+
+External providers usually cannot reach `localhost`; use an approved tunnel only when explicitly testing callbacks/webhooks locally.
+
+## Integration Responsibilities
+
+Whap generally owns business/domain data. WhapCalendar generally owns scheduling mechanics, bookings, availability, external calendar sync, and calendar event changes. Any exception must be explicit in code or documentation.
+
+WC changes may need to notify or update WP for flows such as:
+
+- User login or auth-related integration events
+- Appointment or booking creation
+- Appointment, booking, or meeting updates
+- Rescheduling
+- Cancellations
+- Availability changes
+- External calendar changes detected by WhapCalendar
+- Notifications from WhapCalendar to Whap through webhooks
+
+Whenever a change is made in WC, evaluate whether WP must be notified or updated. Avoid sync loops by using idempotency keys, external IDs, event IDs, timestamps, sync origin metadata, last-synced hashes, or processed-event records as appropriate.
+
+## Integration Implementation Rules
+
+- Keep synchronization logic explicit, traceable, and idempotent.
+- Prefer dedicated integration modules/services over scattered HTTP calls in UI components, routers, or unrelated controllers.
+- Use typed payloads and validate inbound webhook payloads.
+- Authenticate API and webhook communication with server-side secrets or signatures.
+- Do not expose integration secrets, webhook tokens, OAuth credentials, API keys, or calendar provider secrets to browser-side code.
+- Handle non-2xx responses, timeouts, retries, and destination outages deliberately.
+- Log enough context to debug synchronization issues without logging secrets or sensitive user data.
+- For expensive or slow integration work, prefer background jobs/queues where the existing architecture supports them.
+
+Recommended WC naming examples:
+
+```text
+whapClient
+sendWebhookToWhap
+handleWhapWebhook
+syncBookingToWhap
+notifyWhapMeetingUpdated
+```
+
+When adding or changing integration behavior, document new environment variables, webhook endpoints, payloads, authentication method, source of truth, retry/failure behavior, and local/VPS testing instructions. Update `.env.example` when adding environment variables.
+
+## Local Development Workflow
+
+Use the WC dev script for local Docker development with hot reload instead of rebuilding production images:
+
+```bash
+./wc-dev.sh          # Start web + API dev services with hot reload
+./wc-dev.sh start    # Start web + API dev services in the background
+./wc-dev.sh deps     # Reinstall dependencies into the Docker node_modules volume
+./wc-dev.sh reset    # Remove dev volumes and start from a clean state
+./wc-dev.sh down     # Stop dev services
+./wc-dev.sh logs     # Follow web + API dev logs
+./wc-dev.sh ps       # Show dev service status
+./wc-dev.sh status   # Show service status and local HTTP checks
+```
+
+Use `docker-compose.yml` and production image builds only for production-like validation, not normal local development.
+
+Before diagnosing local WC issues, inspect:
+
+```bash
+pwd
+git branch --show-current
+git status --short
+./wc-dev.sh ps
+```
+
+Also inspect `.env`, `.env.example`, Docker Compose files, exposed ports, internal hostnames, app logs, API routes, webhook handlers, queues, and database connection settings.
+
+### Local App Store Visibility
+
+WC controls App Store visibility with the `App.enabled` column. When Greg asks to show only specific apps locally, update the local Docker Postgres DB by setting `enabled` from an allowlist of app slugs.
+
+Default Whap local allowlist is Google Calendar and Google Meet:
+
+```bash
+docker compose -f docker-compose.dev.yml exec -T database psql -U unicorn_user -d calendso -c "UPDATE \"App\" SET \"enabled\" = slug IN ('google-calendar', 'google-meet');"
+docker compose -f docker-compose.dev.yml exec -T database psql -U unicorn_user -d calendso -c "SELECT slug, \"dirName\", \"enabled\" FROM \"App\" WHERE \"enabled\" = true ORDER BY slug;"
+```
+
+To activate another app, add its `slug` to the `IN (...)` allowlist. Use `slug`, not `dirName`; examples: Google Calendar is `google-calendar`, Google Meet is `google-meet`.
+
+## Integration Debugging Checklist
+
+When debugging a synchronization issue, determine:
+
+1. Is Whap working independently?
+2. Is WhapCalendar working independently?
+3. Can Whap reach WhapCalendar?
+4. Can WhapCalendar reach Whap?
+5. Are URLs and ports correct for the current environment?
+6. Are Docker containers healthy?
+7. Are databases independent and available?
+8. Are API credentials and webhook secrets configured?
+9. Are logs showing inbound and outbound requests?
+10. Is the issue local-only, VPS-only, or both?
+11. Was the event already processed?
+12. Is there a sync loop or missing external ID mapping?
 
 ## Do
 
@@ -80,6 +228,7 @@ When a task requires extensive changes, break it into multiple PRs:
 See [agents/commands.md](agents/commands.md) for full reference. Key commands:
 
 ```bash
+./wc-dev.sh                  # Start local WC dev stack with hot reload
 yarn type-check:ci --force  # Type check (always run before pushing)
 yarn biome check --write .  # Lint and format
 TZ=UTC yarn test            # Run unit tests

@@ -1,6 +1,3 @@
-import { default as cloneDeep } from "lodash/cloneDeep";
-import type { z } from "zod";
-
 import dayjs from "@calcom/dayjs";
 import type BaseEmail from "@calcom/emails/templates/_base-email";
 import type { EventNameObjectType } from "@calcom/features/eventtypes/lib/eventNaming";
@@ -12,7 +9,8 @@ import { withReporting } from "@calcom/lib/sentryWrapper";
 import { prisma } from "@calcom/prisma";
 import type { EventTypeMetaDataSchema } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
-
+import { default as cloneDeep } from "lodash/cloneDeep";
+import type { z } from "zod";
 import AwaitingPaymentSMS from "../sms/attendee/awaiting-payment-sms";
 import CancelledSeatSMS from "../sms/attendee/cancelled-seat-sms";
 import EventCancelledSMS from "../sms/attendee/event-cancelled-sms";
@@ -76,6 +74,16 @@ const eventTypeDisableHostEmail = (metadata?: EventTypeMetadata) => {
   return !!metadata?.disableStandardEmails?.all?.host;
 };
 
+export const isWhapPublicBookingSlug = (slug?: string | null): boolean => {
+  if (!slug) return false;
+
+  return slug.startsWith("whap-") || slug === "session-whap";
+};
+
+export const shouldSuppressWhapStandardNotifications = (slug?: string | null): boolean => {
+  return isWhapPublicBookingSlug(slug);
+};
+
 const _sendScheduledEmailsAndSMS = async (
   calEvent: CalendarEvent,
   eventNameObject?: EventNameObjectType,
@@ -86,8 +94,9 @@ const _sendScheduledEmailsAndSMS = async (
   const formattedCalEvent = formatCalEvent(calEvent);
   const emailsToSend: Promise<unknown>[] = [];
   const organizationSettings = await fetchOrganizationEmailSettings(calEvent.organizationId);
+  const shouldSuppressScheduledEmails = isWhapPublicBookingSlug(formattedCalEvent.type);
 
-  if (!hostEmailDisabled && !eventTypeDisableHostEmail(eventTypeMetadata)) {
+  if (!shouldSuppressScheduledEmails && !hostEmailDisabled && !eventTypeDisableHostEmail(eventTypeMetadata)) {
     emailsToSend.push(sendEmail(() => new OrganizerScheduledEmail({ calEvent: formattedCalEvent })));
 
     if (formattedCalEvent.team) {
@@ -101,6 +110,7 @@ const _sendScheduledEmailsAndSMS = async (
 
   if (
     !attendeeEmailDisabled &&
+    !shouldSuppressScheduledEmails &&
     !shouldSkipAttendeeEmailWithSettings(eventTypeMetadata, organizationSettings, EmailType.CONFIRMATION)
   ) {
     emailsToSend.push(
@@ -149,11 +159,14 @@ export const sendReassignedScheduledEmailsAndSMS = async ({
   const formattedCalEvent = formatCalEvent(calEvent);
   const emailsAndSMSToSend: Promise<unknown>[] = [];
   const eventScheduledSMS = new EventSuccessfullyScheduledSMS(calEvent);
+  const shouldSuppressScheduledEmails = isWhapPublicBookingSlug(formattedCalEvent.type);
 
   for (const teamMember of members) {
-    emailsAndSMSToSend.push(
-      sendEmail(() => new OrganizerScheduledEmail({ calEvent: formattedCalEvent, teamMember, reassigned }))
-    );
+    if (!shouldSuppressScheduledEmails) {
+      emailsAndSMSToSend.push(
+        sendEmail(() => new OrganizerScheduledEmail({ calEvent: formattedCalEvent, teamMember, reassigned }))
+      );
+    }
     if (teamMember.phoneNumber) {
       emailsAndSMSToSend.push(eventScheduledSMS.sendSMSToAttendee(teamMember));
     }
@@ -285,6 +298,9 @@ const _sendRescheduledEmailsAndSMS = async (
   eventTypeMetadata?: EventTypeMetadata
 ) => {
   const calendarEvent = formatCalEvent(calEvent);
+
+  if (shouldSuppressWhapStandardNotifications(calendarEvent.type)) return;
+
   const emailsToSend: Promise<unknown>[] = [];
   const organizationSettings = await fetchOrganizationEmailSettings(calEvent.organizationId);
 
@@ -333,6 +349,8 @@ export const sendRescheduledSeatEmailAndSMS = async (
 ) => {
   const calendarEvent = formatCalEvent(calEvent);
 
+  if (shouldSuppressWhapStandardNotifications(calendarEvent.type)) return;
+
   const clonedCalEvent = cloneDeep(calendarEvent);
   const emailsToSend: Promise<unknown>[] = [];
   const organizationSettings = await fetchOrganizationEmailSettings(calEvent.organizationId);
@@ -372,8 +390,9 @@ export const sendScheduledSeatsEmailsAndSMS = async (
 
   const emailsToSend: Promise<unknown>[] = [];
   const organizationSettings = await fetchOrganizationEmailSettings(calEvent.organizationId);
+  const shouldSuppressScheduledEmails = isWhapPublicBookingSlug(calendarEvent.type);
 
-  if (!hostEmailDisabled && !eventTypeDisableHostEmail(eventTypeMetadata)) {
+  if (!shouldSuppressScheduledEmails && !hostEmailDisabled && !eventTypeDisableHostEmail(eventTypeMetadata)) {
     emailsToSend.push(sendEmail(() => new OrganizerScheduledEmail({ calEvent: calendarEvent, newSeat })));
 
     if (calendarEvent.team) {
@@ -387,6 +406,7 @@ export const sendScheduledSeatsEmailsAndSMS = async (
 
   if (
     !attendeeEmailDisabled &&
+    !shouldSuppressScheduledEmails &&
     !shouldSkipAttendeeEmailWithSettings(eventTypeMetadata, organizationSettings, EmailType.CONFIRMATION)
   ) {
     emailsToSend.push(
@@ -414,6 +434,9 @@ export const sendCancelledSeatEmailsAndSMS = async (
   eventTypeMetadata?: EventTypeMetadata
 ) => {
   const formattedCalEvent = formatCalEvent(calEvent);
+
+  if (shouldSuppressWhapStandardNotifications(formattedCalEvent.type)) return;
+
   const clonedCalEvent = cloneDeep(formattedCalEvent);
   const emailsToSend: Promise<unknown>[] = [];
   const organizationSettings = await fetchOrganizationEmailSettings(calEvent.organizationId);
@@ -504,6 +527,9 @@ export const sendCancelledEmailsAndSMS = async (
   eventTypeMetadata?: EventTypeMetadata
 ) => {
   const calendarEvent = formatCalEvent(calEvent);
+
+  if (shouldSuppressWhapStandardNotifications(calendarEvent.type)) return;
+
   const emailsToSend: Promise<unknown>[] = [];
   const calEventLength = calendarEvent.length;
   const eventDuration = dayjs(calEvent.endTime).diff(calEvent.startTime, "minutes");
@@ -665,6 +691,7 @@ export const sendLocationChangeEmailsAndSMS = async (
 };
 export const sendAddGuestsEmails = async (calEvent: CalendarEvent, newGuests: string[]) => {
   const calendarEvent = formatCalEvent(calEvent);
+  const shouldSuppressScheduledEmails = isWhapPublicBookingSlug(calendarEvent.type);
 
   const emailsToSend: Promise<unknown>[] = [];
   emailsToSend.push(sendEmail(() => new OrganizerAddGuestsEmail({ calEvent: calendarEvent })));
@@ -677,15 +704,17 @@ export const sendAddGuestsEmails = async (calEvent: CalendarEvent, newGuests: st
     }
   }
 
-  emailsToSend.push(
-    ...calendarEvent.attendees.map((attendee) => {
-      if (newGuests.includes(attendee.email)) {
-        return sendEmail(() => new AttendeeScheduledEmail(calendarEvent, attendee));
-      } else {
-        return sendEmail(() => new AttendeeAddGuestsEmail(calendarEvent, attendee));
+  for (const attendee of calendarEvent.attendees) {
+    if (newGuests.includes(attendee.email)) {
+      if (!shouldSuppressScheduledEmails) {
+        emailsToSend.push(sendEmail(() => new AttendeeScheduledEmail(calendarEvent, attendee)));
       }
-    })
-  );
+
+      continue;
+    }
+
+    emailsToSend.push(sendEmail(() => new AttendeeAddGuestsEmail(calendarEvent, attendee)));
+  }
 
   await Promise.all(emailsToSend);
 };
@@ -697,6 +726,7 @@ export const sendAddGuestsEmailsAndSMS = async (args: {
 }) => {
   const { calEvent, newGuests, eventTypeMetadata } = args;
   const calendarEvent = formatCalEvent(calEvent);
+  const shouldSuppressScheduledEmails = isWhapPublicBookingSlug(calendarEvent.type);
 
   const emailsAndSMSToSend: Promise<unknown>[] = [];
 
@@ -721,7 +751,9 @@ export const sendAddGuestsEmailsAndSMS = async (args: {
       if (
         !shouldSkipAttendeeEmailWithSettings(eventTypeMetadata, organizationSettings, EmailType.CONFIRMATION)
       ) {
-        emailsAndSMSToSend.push(sendEmail(() => new AttendeeScheduledEmail(calendarEvent, attendee)));
+        if (!shouldSuppressScheduledEmails) {
+          emailsAndSMSToSend.push(sendEmail(() => new AttendeeScheduledEmail(calendarEvent, attendee)));
+        }
 
         if (attendee.phoneNumber) {
           emailsAndSMSToSend.push(eventScheduledSMS.sendSMSToAttendee(attendee));

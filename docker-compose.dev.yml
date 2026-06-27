@@ -27,6 +27,10 @@ x-calcom-dev-base: &calcom-dev-base
     - DATABASE_WRITE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}/${POSTGRES_DB}
     - REDIS_URL=redis://redis:6379
     - NODE_ENV=development
+    - CHOKIDAR_USEPOLLING=${CHOKIDAR_USEPOLLING:-true}
+    - WATCHPACK_POLLING=${WATCHPACK_POLLING:-true}
+    - TSC_WATCHFILE=${TSC_WATCHFILE:-UseFsEventsWithFallbackDynamicPolling}
+    - TSC_WATCHDIRECTORY=${TSC_WATCHDIRECTORY:-UseFsEventsWithFallbackDynamicPolling}
 
 services:
   database:
@@ -97,5 +101,9 @@ services:
       - DATABASE_WRITE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DATABASE_HOST}/${POSTGRES_DB}
       - REDIS_URL=redis://redis:6379
       - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=${CHOKIDAR_USEPOLLING:-true}
+      - WATCHPACK_POLLING=${WATCHPACK_POLLING:-true}
+      - TSC_WATCHFILE=${TSC_WATCHFILE:-UseFsEventsWithFallbackDynamicPolling}
+      - TSC_WATCHDIRECTORY=${TSC_WATCHDIRECTORY:-UseFsEventsWithFallbackDynamicPolling}
       - API_PORT=${API_PORT:-5555}
     command: node .yarn/releases/yarn-4.12.0.cjs workspace @calcom/api-v2 dev:no-docker

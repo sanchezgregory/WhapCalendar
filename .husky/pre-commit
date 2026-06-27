@@ -3,5 +3,14 @@ if [ -f .git/MERGE_HEAD ]; then
   exit 0
 fi
 
-yarn lint-staged --verbose
-yarn app-store:build && git add packages/app-store/*.generated.*
+YARN_CMD="node .yarn/releases/yarn-4.12.0.cjs"
+
+if docker compose -f docker-compose.dev.yml ps --services --filter status=running | grep -qx "calcom-dev"; then
+  docker compose -f docker-compose.dev.yml exec -T calcom-dev $YARN_CMD lint-staged --verbose
+  docker compose -f docker-compose.dev.yml exec -T calcom-dev $YARN_CMD app-store:build
+else
+  $YARN_CMD lint-staged --verbose
+  $YARN_CMD app-store:build
+fi
+
+git add packages/app-store/*.generated.*

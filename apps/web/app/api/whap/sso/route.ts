@@ -7,6 +7,7 @@ import { getSafeRedirectUrl } from "@calcom/lib/getSafeRedirectUrl";
 import logger from "@calcom/lib/logger";
 import { WEBAPP_URL } from "@calcom/lib/constants";
 import { prisma } from "@calcom/prisma";
+import type { Prisma } from "@calcom/prisma/client";
 
 const LOCAL_SHARED_SECRET = "local-whap-calendar-secret";
 const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
@@ -14,6 +15,7 @@ const WHAP_LOGIN_URL = process.env.NEXT_PUBLIC_WHAP_LOGIN_URL || "http://localho
 
 const tokenPayloadSchema = z.object({
   whap_user_id: z.number(),
+  mediator_profile_id: z.number(),
   email: z.string().email(),
   iat: z.number(),
   exp: z.number(),
@@ -32,7 +34,7 @@ function isLocalUrl(url: string | undefined) {
 }
 
 function getSharedSecret() {
-  if (process.env.WHAP_CALDIY_SHARED_SECRET) return process.env.WHAP_CALDIY_SHARED_SECRET;
+  if (process.env.WHAPCALENDAR_WEBHOOK_SECRET) return process.env.WHAPCALENDAR_WEBHOOK_SECRET;
   if (isLocalUrl(process.env.WHAP_API_BASE_URL) || isLocalUrl(process.env.NEXT_PUBLIC_WEBAPP_URL)) {
     return LOCAL_SHARED_SECRET;
   }
@@ -99,6 +101,7 @@ export async function GET(req: NextRequest) {
       role: true,
       locale: true,
       completedOnboarding: true,
+      metadata: true,
       profiles: {
         select: { id: true, uid: true, username: true, organizationId: true },
         orderBy: { id: "asc" },
@@ -115,12 +118,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(WHAP_LOGIN_URL);
   }
 
-  if (!user.completedOnboarding || user.locale !== "es") {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { completedOnboarding: true, locale: "es" },
-    });
-  }
+  const metadata = {
+    ...(user.metadata && typeof user.metadata === "object" && !Array.isArray(user.metadata)
+      ? user.metadata
+      : {}),
+    whap: {
+      userId: payload.whap_user_id,
+      mediatorProfileId: payload.mediator_profile_id,
+    },
+  } satisfies Prisma.InputJsonObject;
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      completedOnboarding: true,
+      locale: "es",
+      metadata,
+    },
+  });
 
   const nextAuthSecret = process.env.NEXTAUTH_SECRET;
   if (!nextAuthSecret) {
@@ -149,7 +164,8 @@ export async function GET(req: NextRequest) {
 
   logger.info("Whap SSO session created", {
     whapUserId: payload.whap_user_id,
-    calDiyUserId: user.id,
+    mediatorProfileId: payload.mediator_profile_id,
+    whapCalendarUserId: user.id,
     email: user.email,
   });
 

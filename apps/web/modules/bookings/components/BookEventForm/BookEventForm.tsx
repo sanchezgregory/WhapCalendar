@@ -36,6 +36,7 @@ type BookEventFormProps = {
   isTimeslotUnavailable: boolean;
   shouldRenderCaptcha?: boolean;
   confirmButtonDisabled?: boolean;
+  termsAppName?: string;
   classNames?: {
     confirmButton?: string;
     backButton?: string;
@@ -58,6 +59,7 @@ export const BookEventForm = ({
   isTimeslotUnavailable,
   shouldRenderCaptcha,
   confirmButtonDisabled,
+  termsAppName,
   classNames,
   timeslot,
 }: Omit<BookEventFormProps, "event"> & {
@@ -179,7 +181,7 @@ export const BookEventForm = ({
             <ServerTrans
               t={t}
               i18nKey="signing_up_terms"
-              values={{ appName: APP_NAME }}
+              values={{ appName: termsAppName ?? APP_NAME }}
               components={[
                 <Link
                   className="text-emphasis hover:underline"

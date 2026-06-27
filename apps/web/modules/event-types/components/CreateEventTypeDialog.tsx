@@ -11,10 +11,15 @@ import { DialogClose, DialogContent, DialogFooter } from "@calcom/ui/components/
 import { showToast } from "@calcom/ui/components/toast";
 import { isValidPhoneNumber } from "libphonenumber-js/max";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { z } from "zod";
 import { useCreateEventType } from "~/event-types/hooks/useCreateEventType";
 
 const WEBSITE_URL = process.env.NEXT_PUBLIC_WEBSITE_URL ?? "";
+const WHAP_MEDIATOR_EVENT_DESCRIPTION = "Mediación con: << Tu nombre aquí >>";
+const WHAP_MEDIATOR_EVENT_LENGTH = 60;
+const WHAP_MEDIATOR_EVENT_TITLE = "Whap Session";
+const WHAP_MEDIATOR_EVENT_SLUG = "whap-session";
 
 // this describes the uniform data needed to create a new event type on Profile or Team
 export interface EventTypeParent {
@@ -63,13 +68,19 @@ const querySchema = z.object({
     .optional(),
 });
 
-export function CreateEventTypeDialog({ profileOptions }: { profileOptions: ProfileOption[] }) {
+export function CreateEventTypeDialog({
+  profileOptions,
+  isWhapMediator,
+}: {
+  profileOptions: ProfileOption[];
+  isWhapMediator: boolean;
+}) {
   const { t } = useLocale();
   const router = useRouter();
   const orgBranding = null;
 
   const {
-    data: { teamId, eventPage: pageSlug },
+    data: { teamId, eventPage: pageSlug, title, slug, length, description, schedulingType, locations },
   } = useTypedQuery(querySchema);
 
   const teamProfile = profileOptions.find((profile) => profile.teamId === teamId);
@@ -103,6 +114,23 @@ export function CreateEventTypeDialog({ profileOptions }: { profileOptions: Prof
 
   const { form, createMutation, isManagedEventType } = useCreateEventType(onSuccessMutation, onErrorMutation);
 
+  useEffect(() => {
+    if (teamId) return;
+
+    const defaultTitle = title ?? (isWhapMediator ? WHAP_MEDIATOR_EVENT_TITLE : undefined);
+    const defaultSlug = slug ?? (isWhapMediator ? WHAP_MEDIATOR_EVENT_SLUG : undefined);
+    const defaultDescription = description ?? (isWhapMediator ? WHAP_MEDIATOR_EVENT_DESCRIPTION : undefined);
+
+    form.reset({
+      title: defaultTitle,
+      slug: defaultSlug,
+      length: length ?? (isWhapMediator ? WHAP_MEDIATOR_EVENT_LENGTH : 15),
+      description: defaultDescription,
+      schedulingType,
+      locations,
+    });
+  }, [description, form, isWhapMediator, length, locations, pageSlug, schedulingType, slug, teamId, title]);
+
   const urlPrefix = WEBSITE_URL;
 
   return (
@@ -120,6 +148,8 @@ export function CreateEventTypeDialog({ profileOptions }: { profileOptions: Prof
             isPending={createMutation.isPending}
             form={form}
             isManagedEventType={isManagedEventType}
+            isTitleReadOnly={isWhapMediator}
+            isSlugReadOnly={isWhapMediator}
             handleSubmit={(values) => {
               createMutation.mutate(values);
             }}

@@ -26,6 +26,8 @@ export default function CreateEventTypeForm({
   isPending,
   urlPrefix,
   SubmitButton,
+  isTitleReadOnly = false,
+  isSlugReadOnly = false,
 }: {
   form: UseFormReturn<CreateEventTypeFormValues>;
   isManagedEventType: boolean;
@@ -34,6 +36,8 @@ export default function CreateEventTypeForm({
   isPending: boolean;
   urlPrefix?: string;
   SubmitButton: (isPending: boolean) => ReactNode;
+  isTitleReadOnly?: boolean;
+  isSlugReadOnly?: boolean;
 }) {
   const isPlatform = useIsPlatform();
   const { t } = useLocale();
@@ -51,8 +55,11 @@ export default function CreateEventTypeForm({
           label={t("title")}
           placeholder={t("quick_chat")}
           data-testid="event-type-quick-chat"
+          readOnly={isTitleReadOnly}
           {...register("title")}
           onChange={(e) => {
+            if (isTitleReadOnly) return;
+
             form.setValue("title", e?.target.value);
             if (form.formState.touchedFields["slug"] === undefined) {
               form.setValue("slug", slugify(e?.target.value));
@@ -74,8 +81,11 @@ export default function CreateEventTypeForm({
               }
               containerClassName="[&>div]:gap-0"
               className="pl-0"
+              readOnly={isSlugReadOnly}
               {...register("slug")}
               onChange={(e) => {
+                if (isSlugReadOnly) return;
+
                 form.setValue("slug", slugify(e?.target.value), { shouldTouch: true });
               }}
             />
@@ -101,8 +111,11 @@ export default function CreateEventTypeForm({
               }
               containerClassName="[&>div]:gap-0"
               className="pl-0"
+              readOnly={isSlugReadOnly}
               {...register("slug")}
               onChange={(e) => {
+                if (isSlugReadOnly) return;
+
                 form.setValue("slug", slugify(e?.target.value), { shouldTouch: true });
               }}
             />

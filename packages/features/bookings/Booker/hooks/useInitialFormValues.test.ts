@@ -127,6 +127,34 @@ describe("useInitialFormValues - Autofill Disable Feature", () => {
       });
     });
 
+    it("should keep attendee identity empty when session identity is intentionally omitted", async () => {
+      const eventType: Pick<BookerEvent, "bookingFields" | "team" | "owner"> = {
+        bookingFields: mockBookingFields,
+        team: null,
+        owner: null,
+      };
+
+      const { result } = renderHook(() =>
+        useInitialFormValues({
+          ...baseProps,
+          eventType,
+          hasSession: true,
+          extraOptions: {
+            whap_context: JSON.stringify({ session_payment_id: 123 }),
+          },
+        })
+      );
+
+      await waitFor(() => {
+        expect(result.current.values.responses).toBeDefined();
+      });
+
+      expect(result.current.values.responses).toMatchObject({
+        email: "",
+        name: "",
+      });
+    });
+
     it("should use URL parameters when organizationSettings is undefined", async () => {
       const eventType: Pick<BookerEvent, "bookingFields" | "team" | "owner"> = {
         bookingFields: mockBookingFields,

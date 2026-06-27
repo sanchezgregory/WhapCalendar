@@ -1,6 +1,7 @@
 import { getServerSession } from "@calcom/features/auth/lib/getServerSession";
 import { checkOnboardingRedirect } from "@calcom/features/auth/lib/onboardingUtils";
 import { getTeamsFiltersFromQuery } from "@calcom/features/filters/lib/getTeamsFiltersFromQuery";
+import { prisma } from "@calcom/prisma";
 import type { RouterOutputs } from "@calcom/trpc/react";
 import { eventTypesRouter } from "@calcom/trpc/server/routers/viewer/eventTypes/_router";
 import { buildLegacyRequest } from "@lib/buildLegacyCtx";
@@ -13,6 +14,10 @@ import { redirect } from "next/navigation";
 import type { ReactElement } from "react";
 
 import { EventTypesWrapper } from "./EventTypesWrapper";
+
+function hasWhapMetadata(metadata: unknown): boolean {
+  return Boolean(metadata && typeof metadata === "object" && !Array.isArray(metadata) && "whap" in metadata);
+}
 
 const getCachedEventGroups: (
   headers: ReadonlyHeaders,
@@ -67,8 +72,18 @@ const Page = async ({ searchParams }: PageProps): Promise<ReactElement> => {
 
   const filters = getTeamsFiltersFromQuery(_searchParams);
   const userEventGroupsData = await getCachedEventGroups(_headers, _cookies, filters);
+  const whapUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { metadata: true },
+  });
 
-  return <EventTypesWrapper userEventGroupsData={userEventGroupsData} user={session.user} />;
+  return (
+    <EventTypesWrapper
+      userEventGroupsData={userEventGroupsData}
+      user={session.user}
+      isWhapMediator={hasWhapMetadata(whapUser?.metadata)}
+    />
+  );
 };
 
 export const generateMetadata = async (): Promise<ReturnType<typeof _generateMetadata>> =>

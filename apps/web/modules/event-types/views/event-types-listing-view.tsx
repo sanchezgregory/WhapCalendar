@@ -910,7 +910,13 @@ const CreateFirstEventTypeView = ({ slug, searchTerm }: { slug: string; searchTe
   );
 };
 
-const CTA = ({ profileOptions }: { profileOptions: ProfileOption[] }) => {
+const CTA = ({
+  profileOptions,
+  isWhapMediator,
+}: {
+  profileOptions: ProfileOption[];
+  isWhapMediator: boolean;
+}) => {
   const { t } = useLocale();
   const { searchTerm, setSearchTerm } = useSearchContext();
 
@@ -930,12 +936,10 @@ const CTA = ({ profileOptions }: { profileOptions: ProfileOption[] }) => {
         }}
         placeholder={t("search")}
       />
-      <Button
-        data-testid="new-event-type"
-        href={`?dialog=new&eventPage=${profileOptions[0]?.slug ?? ""}`}>
+      <Button data-testid="new-event-type" href={`?dialog=new&eventPage=${profileOptions[0]?.slug ?? ""}`}>
         {t("new")}
       </Button>
-      <CreateEventTypeDialog profileOptions={profileOptions} />
+      <CreateEventTypeDialog profileOptions={profileOptions} isWhapMediator={isWhapMediator} />
     </div>
   );
 };
@@ -1002,7 +1006,12 @@ type Props = {
   } | null;
 };
 
-export const EventTypesCTA = ({ userEventGroupsData }: Omit<Props, "user">) => {
+type EventTypesCTAProps = {
+  userEventGroupsData: GetUserEventGroupsResponse;
+  isWhapMediator: boolean;
+};
+
+export const EventTypesCTA = ({ userEventGroupsData, isWhapMediator }: EventTypesCTAProps) => {
   const profileOptions =
     userEventGroupsData.profiles
       ?.filter((profile) => !profile.readOnly)
@@ -1043,7 +1052,7 @@ export const EventTypesCTA = ({ userEventGroupsData }: Omit<Props, "user">) => {
         };
       }) ?? [];
 
-  return <CTA profileOptions={profileOptions} />;
+  return <CTA profileOptions={profileOptions} isWhapMediator={isWhapMediator} />;
 };
 
 const EventTypesPage = ({ userEventGroupsData, user }: Props) => {

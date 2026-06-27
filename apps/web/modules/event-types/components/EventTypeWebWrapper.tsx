@@ -61,11 +61,11 @@ const EventWebhooksTab = dynamic(() =>
   import("./tabs/webhooks/EventWebhooksTab").then((mod) => mod.EventWebhooksTab)
 );
 
-
 export type EventTypeWebWrapperProps = {
   id: number;
   data: RouterOutputs["viewer"]["eventTypes"]["get"];
   permissions?: EventPermissions;
+  isWhapMediator: boolean;
 };
 
 export const EventTypeWebWrapper = ({
@@ -79,6 +79,7 @@ export const EventTypeWebWrapper = ({
       canDelete: false,
     },
   },
+  isWhapMediator,
 }: EventTypeWebWrapperProps) => {
   const { data: eventTypeQueryData } = trpc.viewer.eventTypes.get.useQuery(
     { id },
@@ -88,7 +89,7 @@ export const EventTypeWebWrapper = ({
   if (serverFetchedData) {
     return (
       <>
-        <EventTypeWeb {...serverFetchedData} id={id} />
+        <EventTypeWeb {...serverFetchedData} id={id} isWhapMediator={isWhapMediator} />
       </>
     );
   }
@@ -97,16 +98,18 @@ export const EventTypeWebWrapper = ({
 
   return (
     <>
-      <EventTypeWeb {...eventTypeQueryData} id={id} />
+      <EventTypeWeb {...eventTypeQueryData} id={id} isWhapMediator={isWhapMediator} />
     </>
   );
 };
 
 const EventTypeWeb = ({
   id,
+  isWhapMediator,
   ...rest
 }: EventTypeSetupProps & {
   id: number;
+  isWhapMediator: boolean;
 }) => {
   const { t } = useLocale();
   const utils = trpc.useUtils();
@@ -278,16 +281,7 @@ const EventTypeWeb = ({
 
   const querySchema = z.object({
     tabName: z
-      .enum([
-        "setup",
-        "availability",
-        "team",
-        "limits",
-        "advanced",
-        "recurring",
-        "apps",
-        "webhooks",
-      ])
+      .enum(["setup", "availability", "team", "limits", "advanced", "recurring", "apps", "webhooks"])
       .optional()
       .default("setup"),
   });
@@ -295,6 +289,7 @@ const EventTypeWeb = ({
   const {
     data: { tabName },
   } = useTypedQuery(querySchema);
+  const activeTabName = isWhapMediator && tabName === "apps" ? "setup" : tabName;
 
   const deleteMutation = trpc.viewer.eventTypes.delete.useMutation({
     onSuccess: async () => {
@@ -325,6 +320,7 @@ const EventTypeWeb = ({
     eventType,
     team,
     eventTypeApps,
+    hideAppsTab: isWhapMediator,
   });
 
   return (
@@ -341,7 +337,7 @@ const EventTypeWeb = ({
       formMethods={form}
       isUpdating={updateMutation.isPending}
       isPlatform={false}
-      tabName={tabName}
+      tabName={activeTabName}
       tabsNavigation={tabsNavigation}>
       {slugExistsChildrenDialogOpen.length ? (
         <ManagedEventTypeDialog

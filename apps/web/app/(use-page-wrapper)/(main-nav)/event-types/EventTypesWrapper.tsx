@@ -12,21 +12,25 @@ type GetUserEventGroupsResponse = Parameters<typeof EventTypesCTA>[0]["userEvent
 
 const CTAWithContext = ({
   userEventGroupsData,
+  isWhapMediator,
 }: {
   userEventGroupsData: GetUserEventGroupsResponse;
+  isWhapMediator: boolean;
 }): ReactElement => {
-  return <EventTypesCTA userEventGroupsData={userEventGroupsData} />;
+  return <EventTypesCTA userEventGroupsData={userEventGroupsData} isWhapMediator={isWhapMediator} />;
 };
 
 export function EventTypesWrapper({
   userEventGroupsData,
   user,
+  isWhapMediator,
 }: {
   userEventGroupsData: GetUserEventGroupsResponse;
   user: {
     id: number;
     completedOnboarding?: boolean;
   } | null;
+  isWhapMediator: boolean;
 }): ReactElement {
   const { t } = useLocale();
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,7 +41,7 @@ export function EventTypesWrapper({
       <ShellMainAppDir
         heading={t("event_types_page_title")}
         subtitle={t("event_types_page_subtitle")}
-        CTA={<CTAWithContext userEventGroupsData={userEventGroupsData} />}>
+        CTA={<CTAWithContext userEventGroupsData={userEventGroupsData} isWhapMediator={isWhapMediator} />}>
         <EventTypes userEventGroupsData={userEventGroupsData} user={user} />
       </ShellMainAppDir>
     </SearchContext.Provider>

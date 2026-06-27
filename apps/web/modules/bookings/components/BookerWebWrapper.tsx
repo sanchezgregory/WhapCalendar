@@ -129,6 +129,7 @@ const BookerWebWrapperComponent = (props: BookerWebWrapperAtomProps): JSX.Elemen
   const clientEmail =
     searchParams?.get("client-email") ||
     getWhapContextValue(whapContext, ["client-email", "client_email", "clientEmail"]);
+  const hasWhapBookingContext = Boolean(clientName || clientEmail || whapContext);
   const metadata = {
     ...metadataFromQueryParams,
     ...(whapContext ? { whap_context: whapContext } : {}),
@@ -146,9 +147,9 @@ const BookerWebWrapperComponent = (props: BookerWebWrapperAtomProps): JSX.Elemen
 
   const bookerForm = useBookingForm({
     event: event.data,
-    sessionEmail: session?.user.email,
-    sessionUsername: session?.user.username,
-    sessionName: session?.user.name,
+    sessionEmail: hasWhapBookingContext ? null : session?.user.email,
+    sessionUsername: hasWhapBookingContext ? null : session?.user.username,
+    sessionName: hasWhapBookingContext ? null : session?.user.name,
     hasSession,
     extraOptions: routerQuery,
     prefillFormParams,

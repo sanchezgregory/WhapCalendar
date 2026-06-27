@@ -1,9 +1,11 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
-
 import type { EventTypeMetadata } from "@calcom/prisma/zod-utils";
 import type { CalendarEvent, Person } from "@calcom/types/Calendar";
-
-import { shouldSkipAttendeeEmailWithSettings } from "./email-manager";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  isWhapPublicBookingSlug,
+  shouldSkipAttendeeEmailWithSettings,
+  shouldSuppressWhapStandardNotifications,
+} from "./email-manager";
 import AttendeeScheduledEmail from "./templates/attendee-scheduled-email";
 
 vi.mock("@calcom/prisma", () => ({
@@ -38,6 +40,34 @@ vi.mock("./templates/_base-email", () => {
       }
     },
   };
+});
+
+describe("isWhapPublicBookingSlug", () => {
+  it("matches Whap public booking slugs", () => {
+    expect(isWhapPublicBookingSlug("whap-mediacion")).toBe(true);
+    expect(isWhapPublicBookingSlug("whap-session")).toBe(true);
+    expect(isWhapPublicBookingSlug("session-whap")).toBe(true);
+  });
+
+  it("does not match regular booking slugs", () => {
+    expect(isWhapPublicBookingSlug("consultation")).toBe(false);
+    expect(isWhapPublicBookingSlug("session")).toBe(false);
+    expect(isWhapPublicBookingSlug(undefined)).toBe(false);
+    expect(isWhapPublicBookingSlug(null)).toBe(false);
+  });
+});
+
+describe("shouldSuppressWhapStandardNotifications", () => {
+  it("suppresses standard notifications for Whap booking slugs", () => {
+    expect(shouldSuppressWhapStandardNotifications("whap-session")).toBe(true);
+    expect(shouldSuppressWhapStandardNotifications("whap-mediacion")).toBe(true);
+    expect(shouldSuppressWhapStandardNotifications("session-whap")).toBe(true);
+  });
+
+  it("does not suppress standard notifications for regular booking slugs", () => {
+    expect(shouldSuppressWhapStandardNotifications("consultation")).toBe(false);
+    expect(shouldSuppressWhapStandardNotifications(null)).toBe(false);
+  });
 });
 
 describe("shouldSkipAttendeeEmailWithSettings", () => {
