@@ -1,0 +1,56 @@
+volumes:
+  whapcalendar-dev-database-data:
+  whapcalendar-dev-redis-data:
+networks:
+  whapcalendar-dev-stack:
+    name: whapcalendar-dev-stack
+services:
+  whapcalendar-dev-database:
+    container_name: whapcalendar-dev-database
+    image: postgres
+    restart: always
+    volumes:
+      - whapcalendar-dev-database-data:/var/lib/postgresql
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    networks:
+      - whapcalendar-dev-stack
+  whapcalendar-dev-redis:
+    container_name: whapcalendar-dev-redis
+    image: redis:latest
+    restart: always
+    volumes:
+      - whapcalendar-dev-redis-data:/data
+    networks:
+      - whapcalendar-dev-stack
+  whapcalendar-dev-web:
+    container_name: whapcalendar-dev-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_WEBAPP_URL: ${NEXT_PUBLIC_WEBAPP_URL}
+        NEXT_PUBLIC_API_V2_URL: ${NEXT_PUBLIC_API_V2_URL}
+        NEXT_PUBLIC_WHAP_LOGIN_URL: ${NEXT_PUBLIC_WHAP_LOGIN_URL}
+        NEXT_PUBLIC_WHAP_PROFILE_URL: ${NEXT_PUBLIC_WHAP_PROFILE_URL}
+        CALCOM_TELEMETRY_DISABLED: ${CALCOM_TELEMETRY_DISABLED}
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+        CALENDSO_ENCRYPTION_KEY: ${CALENDSO_ENCRYPTION_KEY}
+        DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@whapcalendar-dev-database/${POSTGRES_DB}
+    restart: always
+    ports:
+      - "3001:3000"
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@whapcalendar-dev-database/${POSTGRES_DB}
+      - DATABASE_DIRECT_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@whapcalendar-dev-database/${POSTGRES_DB}
+      - REDIS_URL=redis://whapcalendar-dev-redis:6379
+    depends_on:
+      - whapcalendar-dev-database
+      - whapcalendar-dev-redis
+    networks:
+      - whapcalendar-dev-stack
