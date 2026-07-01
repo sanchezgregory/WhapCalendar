@@ -34,7 +34,8 @@ function isLocalUrl(url: string | undefined) {
 }
 
 function getSharedSecret() {
-  if (process.env.WHAPCALENDAR_WEBHOOK_SECRET) return process.env.WHAPCALENDAR_WEBHOOK_SECRET;
+  const configuredSecret = process.env.WHAPCALENDAR_WEBHOOK_SECRET?.trim() ?? "";
+  if (configuredSecret) return configuredSecret;
   if (isLocalUrl(process.env.WHAP_API_BASE_URL) || isLocalUrl(process.env.NEXT_PUBLIC_WEBAPP_URL)) {
     return LOCAL_SHARED_SECRET;
   }
