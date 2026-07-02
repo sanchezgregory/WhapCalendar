@@ -312,7 +312,14 @@
     "B2_APPLICATION_KEY_ID",
     "B2_APPLICATION_KEY",
     "B2_BUCKET_ID",
-    "B2_BUCKET_NAME"
+    "B2_BUCKET_NAME",
+    "WHAPCALENDAR_WEBHOOK_SECRET",
+    "WHAP_API_BASE_URL",
+    "NEXT_PUBLIC_WHAP_URL",
+    "NEXT_PUBLIC_WHAP_LOGIN_URL",
+    "NEXT_PUBLIC_WHAP_PROFILE_URL",
+    "WHAP_URL",
+    "WHAPCALENDAR_URL"
   ],
   "tasks": {
     "@calcom/web#copy-app-store-static": {
