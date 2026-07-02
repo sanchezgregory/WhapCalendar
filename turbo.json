@@ -1,6 +1,13 @@
 {
   "$schema": "https://turborepo.org/schema.json",
   "globalDependencies": ["yarn.lock"],
+  "globalPassThroughEnv": [
+    "WHAPCALENDAR_WEBHOOK_SECRET",
+    "WHAP_API_BASE_URL",
+    "NEXT_PUBLIC_WHAP_URL",
+    "NEXT_PUBLIC_WHAP_LOGIN_URL",
+    "NEXT_PUBLIC_WHAP_PROFILE_URL"
+  ],
   "globalEnv": [
     "ALLOWED_HOSTNAMES",
     "ANALYZE",
